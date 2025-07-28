@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom';
 import { Calendar, Clock, TrendingUp, Users, Trophy, Star, Zap } from 'lucide-react';
 import Header from '../components/common/Header';
 
+// Utilitaires pour les images
+const getChampionImage = (championName) => {
+  const version = '14.1.1';
+  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${championName}.png`;
+};
+
 const Accueil = () => {
   return (
     <div className="min-h-screen bg-gray-900">
@@ -64,11 +70,11 @@ const Accueil = () => {
         {/* Nouveaux tableaux */}
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Top 5 Solo Queue LP */}
+            {/* Top 5 Solo Queue LP EUW */}
             <div className="bg-gray-800 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-4 flex items-center" style={{color: '#60a5fa'}}>
                 <Trophy className="mr-2" />
-                Top 5 Solo Queue LP
+                Top 5 Solo Queue LP - EUW
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -84,64 +90,67 @@ const Accueil = () => {
                   <tbody>
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2 font-bold" style={{color: '#fbbf24'}}>1</td>
-                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>BRO Hena</td>
-                      <td className="p-2">Mid</td>
+                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>dmsdklb#vivi</td>
+                      <td className="p-2">Mid/ADC</td>
                       <td className="p-2">
-                        <img src="https://lolstatic-a.akamaihd.net/esports-assets/production/team/bro-new-9dkgc9ky.png" 
-                             alt="BRO" className="w-6 h-6 rounded" />
+                        <div className="w-6 h-6 bg-gray-600 rounded text-xs flex items-center justify-center" style={{fontSize: '8px'}}>
+                          SoloQ
+                        </div>
                       </td>
-                      <td className="p-2 font-bold" style={{color: '#fbbf24'}}>1822</td>
+                      <td className="p-2 font-bold" style={{color: '#fbbf24'}}>2167</td>
                     </tr>
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2 font-bold" style={{color: '#d1d5db'}}>2</td>
-                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>Gen.G Chovy</td>
-                      <td className="p-2">Mid</td>
+                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>113#Kuri</td>
+                      <td className="p-2">Jungle</td>
                       <td className="p-2">
-                        <img src="https://lolstatic-a.akamaihd.net/esports-assets/production/team/gen-g-new-3l3hzaac.png" 
-                             alt="Gen.G" className="w-6 h-6 rounded" />
+                        <div className="w-6 h-6 bg-gray-600 rounded text-xs flex items-center justify-center" style={{fontSize: '8px'}}>
+                          SoloQ
+                        </div>
                       </td>
-                      <td className="p-2 font-bold" style={{color: '#d1d5db'}}>1777</td>
+                      <td className="p-2 font-bold" style={{color: '#d1d5db'}}>2046</td>
                     </tr>
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2 font-bold" style={{color: '#fb923c'}}>3</td>
-                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>KDF BuLLDoG</td>
+                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>KC NEXT ADKING#EUW</td>
                       <td className="p-2">ADC</td>
                       <td className="p-2">
-                        <img src="https://lolstatic-a.akamaihd.net/esports-assets/production/team/kwangdong-freecs-7ckvtv84.png" 
-                             alt="KDF" className="w-6 h-6 rounded" />
+                        <img src="https://lolstatic-a.akamaihd.net/esports-assets/production/team/karmine-corp-7jcmhyeb.png" 
+                             alt="KC" className="w-6 h-6 rounded" />
                       </td>
-                      <td className="p-2 font-bold" style={{color: '#fb923c'}}>1711</td>
+                      <td className="p-2 font-bold" style={{color: '#fb923c'}}>1879</td>
                     </tr>
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2" style={{color: '#9ca3af'}}>4</td>
-                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>DK Canyon</td>
+                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>G2 SkewMond#3327</td>
                       <td className="p-2">Jungle</td>
                       <td className="p-2">
-                        <img src="https://lolstatic-a.akamaihd.net/esports-assets/production/team/damwon-kia-4bzrk9vn.png" 
-                             alt="DK" className="w-6 h-6 rounded" />
+                        <img src="https://lolstatic-a.akamaihd.net/esports-assets/production/team/g2-esports-dcj4k3bk.png" 
+                             alt="G2" className="w-6 h-6 rounded" />
                       </td>
-                      <td className="p-2" style={{color: '#9ca3af'}}>1687</td>
+                      <td className="p-2" style={{color: '#9ca3af'}}>1876</td>
                     </tr>
                     <tr className="hover:bg-gray-700">
                       <td className="p-2" style={{color: '#9ca3af'}}>5</td>
-                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>NS Calix</td>
-                      <td className="p-2">Top</td>
+                      <td className="p-2 font-semibold" style={{color: '#93c5fd'}}>NattyNatt#2005</td>
+                      <td className="p-2">Jungle</td>
                       <td className="p-2">
-                        <img src="https://lolstatic-a.akamaihd.net/esports-assets/production/team/nongshim-redforce-c2yotvqb.png" 
-                             alt="NS" className="w-6 h-6 rounded" />
+                        <div className="w-6 h-6 bg-gray-600 rounded text-xs flex items-center justify-center" style={{fontSize: '8px'}}>
+                          SoloQ
+                        </div>
                       </td>
-                      <td className="p-2" style={{color: '#9ca3af'}}>1654</td>
+                      <td className="p-2" style={{color: '#9ca3af'}}>1833</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Top 5 Champions MSI 2025 */}
+            {/* Top 5 Best Champs ERL */}
             <div className="bg-gray-800 p-6 rounded-lg">
               <h3 className="text-xl font-bold mb-4 flex items-center" style={{color: '#c084fc'}}>
                 <Star className="mr-2" />
-                Top 5 Champions MSI 2025
+                Top 5 Best Champs ERL
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -158,57 +167,57 @@ const Accueil = () => {
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2 font-bold" style={{color: '#fbbf24'}}>1</td>
                       <td className="p-2 flex items-center">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Azir.png" 
-                             alt="Azir" className="w-8 h-8 rounded mr-2" />
-                        <span className="font-semibold">Azir</span>
+                        <img src={getChampionImage('Pantheon')} 
+                             alt="Pantheon" className="w-8 h-8 rounded mr-2" />
+                        <span className="font-semibold">Pantheon</span>
                       </td>
-                      <td className="p-2" style={{color: '#4ade80'}}>68%</td>
+                      <td className="p-2" style={{color: '#4ade80'}}>25%</td>
                       <td className="p-2" style={{color: '#f87171'}}>24%</td>
-                      <td className="p-2" style={{color: '#60a5fa'}}>64%</td>
+                      <td className="p-2" style={{color: '#60a5fa'}}>54%</td>
                     </tr>
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2 font-bold" style={{color: '#d1d5db'}}>2</td>
                       <td className="p-2 flex items-center">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Viego.png" 
-                             alt="Viego" className="w-8 h-8 rounded mr-2" />
-                        <span className="font-semibold">Viego</span>
+                        <img src={getChampionImage('Varus')} 
+                             alt="Varus" className="w-8 h-8 rounded mr-2" />
+                        <span className="font-semibold">Varus</span>
                       </td>
-                      <td className="p-2" style={{color: '#4ade80'}}>62%</td>
-                      <td className="p-2" style={{color: '#f87171'}}>31%</td>
-                      <td className="p-2" style={{color: '#60a5fa'}}>58%</td>
+                      <td className="p-2" style={{color: '#4ade80'}}>68%</td>
+                      <td className="p-2" style={{color: '#f87171'}}>8%</td>
+                      <td className="p-2" style={{color: '#60a5fa'}}>53%</td>
                     </tr>
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2 font-bold" style={{color: '#fb923c'}}>3</td>
                       <td className="p-2 flex items-center">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Jinx.png" 
-                             alt="Jinx" className="w-8 h-8 rounded mr-2" />
-                        <span className="font-semibold">Jinx</span>
+                        <img src={getChampionImage('Gwen')} 
+                             alt="Gwen" className="w-8 h-8 rounded mr-2" />
+                        <span className="font-semibold">Gwen</span>
                       </td>
-                      <td className="p-2" style={{color: '#4ade80'}}>59%</td>
-                      <td className="p-2" style={{color: '#f87171'}}>18%</td>
-                      <td className="p-2" style={{color: '#60a5fa'}}>72%</td>
+                      <td className="p-2" style={{color: '#4ade80'}}>60%</td>
+                      <td className="p-2" style={{color: '#f87171'}}>8%</td>
+                      <td className="p-2" style={{color: '#60a5fa'}}>49%</td>
                     </tr>
                     <tr className="border-b border-gray-700 hover:bg-gray-700">
                       <td className="p-2" style={{color: '#9ca3af'}}>4</td>
                       <td className="p-2 flex items-center">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Rakan.png" 
-                             alt="Rakan" className="w-8 h-8 rounded mr-2" />
-                        <span className="font-semibold">Rakan</span>
+                        <img src={getChampionImage('Taliyah')} 
+                             alt="Taliyah" className="w-8 h-8 rounded mr-2" />
+                        <span className="font-semibold">Taliyah</span>
                       </td>
-                      <td className="p-2" style={{color: '#4ade80'}}>55%</td>
-                      <td className="p-2" style={{color: '#f87171'}}>29%</td>
-                      <td className="p-2" style={{color: '#60a5fa'}}>61%</td>
+                      <td className="p-2" style={{color: '#4ade80'}}>84%</td>
+                      <td className="p-2" style={{color: '#f87171'}}>37%</td>
+                      <td className="p-2" style={{color: '#60a5fa'}}>54%</td>
                     </tr>
                     <tr className="hover:bg-gray-700">
                       <td className="p-2" style={{color: '#9ca3af'}}>5</td>
                       <td className="p-2 flex items-center">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Vi.png" 
-                             alt="Vi" className="w-8 h-8 rounded mr-2" />
-                        <span className="font-semibold">Vi</span>
+                        <img src={getChampionImage('Azir')} 
+                             alt="Azir" className="w-8 h-8 rounded mr-2" />
+                        <span className="font-semibold">Azir</span>
                       </td>
-                      <td className="p-2" style={{color: '#4ade80'}}>51%</td>
-                      <td className="p-2" style={{color: '#f87171'}}>42%</td>
-                      <td className="p-2" style={{color: '#60a5fa'}}>56%</td>
+                      <td className="p-2" style={{color: '#4ade80'}}>70%</td>
+                      <td className="p-2" style={{color: '#f87171'}}>70%</td>
+                      <td className="p-2" style={{color: '#60a5fa'}}>60%</td>
                     </tr>
                   </tbody>
                 </table>
@@ -238,7 +247,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 font-bold text-lg" style={{color: '#fbbf24'}}>1</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Jinx.png" 
+                      <img src={getChampionImage('Jinx')} 
                            alt="Jinx" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Jinx</span>
                     </td>
@@ -250,7 +259,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 font-bold text-lg" style={{color: '#d1d5db'}}>2</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Yasuo.png" 
+                      <img src={getChampionImage('Yasuo')} 
                            alt="Yasuo" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Yasuo</span>
                     </td>
@@ -262,7 +271,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 font-bold text-lg" style={{color: '#fb923c'}}>3</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Ezreal.png" 
+                      <img src={getChampionImage('Ezreal')} 
                            alt="Ezreal" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Ezreal</span>
                     </td>
@@ -274,7 +283,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 text-lg" style={{color: '#9ca3af'}}>4</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Thresh.png" 
+                      <img src={getChampionImage('Thresh')} 
                            alt="Thresh" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Thresh</span>
                     </td>
@@ -286,7 +295,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 text-lg" style={{color: '#9ca3af'}}>5</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/LeeSin.png" 
+                      <img src={getChampionImage('LeeSin')} 
                            alt="Lee Sin" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Lee Sin</span>
                     </td>
@@ -298,7 +307,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 text-lg" style={{color: '#9ca3af'}}>6</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Kai'Sa.png" 
+                      <img src={getChampionImage('Kaisa')} 
                            alt="Kai'Sa" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Kai'Sa</span>
                     </td>
@@ -310,7 +319,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 text-lg" style={{color: '#9ca3af'}}>7</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Lux.png" 
+                      <img src={getChampionImage('Lux')} 
                            alt="Lux" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Lux</span>
                     </td>
@@ -322,7 +331,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 text-lg" style={{color: '#9ca3af'}}>8</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Yone.png" 
+                      <img src={getChampionImage('Yone')} 
                            alt="Yone" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Yone</span>
                     </td>
@@ -334,7 +343,7 @@ const Accueil = () => {
                   <tr className="border-b border-gray-700 hover:bg-gray-700">
                     <td className="p-3 text-lg" style={{color: '#9ca3af'}}>9</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Graves.png" 
+                      <img src={getChampionImage('Graves')} 
                            alt="Graves" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Graves</span>
                     </td>
@@ -346,7 +355,7 @@ const Accueil = () => {
                   <tr className="hover:bg-gray-700">
                     <td className="p-3 text-lg" style={{color: '#9ca3af'}}>10</td>
                     <td className="p-3 flex items-center">
-                      <img src="https://ddragon.leagueoflegends.com/cdn/14.9.1/img/champion/Caitlyn.png" 
+                      <img src={getChampionImage('Caitlyn')} 
                            alt="Caitlyn" className="w-10 h-10 rounded mr-3" />
                       <span className="font-semibold text-lg">Caitlyn</span>
                     </td>

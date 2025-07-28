@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Accueil from './pages/Accueil';
 import Profil from './pages/Profil';
+import Team from './pages/Team';
 
 // Composant temporaire pour les pages pas encore créées
 const ComingSoon = ({ title, color = "blue" }) => (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/data-side" element={<ComingSoon title="Data Sides" color="purple" />} />
         <Route path="/amelioration" element={<ComingSoon title="Conseils d'Amélioration" color="orange" />} />
         <Route path="/top-tier" element={<ComingSoon title="Top Tier List" color="yellow" />} />
+        <Route path="/team" element={<Team />} />
       </Routes>
     </Router>
   );

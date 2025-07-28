@@ -11,7 +11,7 @@ const Header = () => {
     { href: '/analyse', label: 'Analyse' },
     { href: '/data-champ', label: 'Data Champ' },
     { href: '/amelioration', label: 'Amélioration' },
-    { href: '/top-tier', label: 'Top Tier' }
+    { href: '/team', label: 'Team' }
   ];
 
   const isActive = (href) => {
