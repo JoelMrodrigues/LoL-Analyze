@@ -1,192 +1,64 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Clock, Trophy, Target } from 'lucide-react';
-import { getChampionImage, getItemImage, getSummonerSpellImage } from '../../services/riotAPI';
-import { formatGameDuration, getKDA } from '../../utils/statsCalucaltor';
+import { ChevronDown, ChevronUp, Users, Trophy, Target, TrendingUp } from 'lucide-react';
 
-const MatchHistory = ({ matches }) => {
+const EnhancedMatchHistory = ({ selectedTeam }) => {
   const [expandedMatch, setExpandedMatch] = useState(null);
+  
+  // Simuler des données de match basées sur votre script
+  const matches = selectedTeam?.matches || [];
 
-  if (!matches.length) return null;
-
-  const toggleMatchDetails = (matchId) => {
-    setExpandedMatch(expandedMatch === matchId ? null : matchId);
+  const toggleMatchDetails = (matchIndex) => {
+    setExpandedMatch(expandedMatch === matchIndex ? null : matchIndex);
   };
 
-  const ItemSlot = ({ itemId }) => {
-    const itemImage = getItemImage(itemId);
+  const getChampionImage = (championName) => {
+    return `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${championName}.png`;
+  };
+
+  const getItemImage = (itemId) => {
+    if (!itemId || itemId === 0) return null;
+    return `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/item/${itemId}.png`;
+  };
+
+  const MatchCard = ({ match, index }) => {
+    const isExpanded = expandedMatch === index;
+    const teamMembers = match.teamData || [];
     
-    if (!itemImage) {
-      return (
-        <div className="w-8 h-8 bg-gray-800 rounded border border-gray-700"></div>
-      );
-    }
-
     return (
-      <img 
-        src={itemImage} 
-        alt="Item" 
-        className="w-8 h-8 rounded border border-gray-600"
-        onError={(e) => {
-          e.target.style.display = 'none';
-        }}
-      />
-    );
-  };
-
-  const PlayerRow = ({ player, isSearchedPlayer }) => (
-    <div className={`flex items-center py-2 px-3 rounded ${
-      isSearchedPlayer 
-        ? 'bg-blue-900 bg-opacity-30 border border-blue-500' 
-        : 'hover:bg-gray-50'
-    }`}>
-      <div className="flex items-center space-x-2 w-24">
-        <div className="relative">
-          <img 
-            src={getChampionImage(player.championName)} 
-            alt={player.championName}
-            className="w-10 h-10 rounded"
-          />
-          <div className="absolute -bottom-1 -right-1 text-xs bg-gray-800 text-white px-1 rounded">
-            {player.level}
-          </div>
-        </div>
-        <div className="flex flex-col space-y-0.5">
-          <img 
-            src={getSummonerSpellImage(player.summoners[0])} 
-            alt="Spell"
-            className="w-4 h-4 rounded"
-          />
-          <img 
-            src={getSummonerSpellImage(player.summoners[1])} 
-            alt="Spell"
-            className="w-4 h-4 rounded"
-          />
-        </div>
-      </div>
-
-      <div className="flex-1 min-w-0 px-3">
-        <div className={`font-medium truncate ${
-          isSearchedPlayer ? 'text-blue-600 font-bold' : 'text-gray-900'
-        }`}>
-          {player.summonerName}
-          {player.tagLine && `#${player.tagLine}`}
-        </div>
-        <div className="text-sm text-gray-500">{player.championName}</div>
-      </div>
-
-      <div className="text-center w-20">
-        <div className="font-semibold text-gray-900">
-          {player.kills}/{player.deaths}/{player.assists}
-        </div>
-        <div className="text-sm text-gray-500">
-          {getKDA(player.kills, player.deaths, player.assists)} KDA
-        </div>
-      </div>
-
-      <div className="text-center w-16">
-        <div className="font-medium text-gray-900">{player.cs}</div>
-        <div className="text-xs text-gray-500">CS</div>
-      </div>
-
-      <div className="text-center w-20">
-        <div className="font-medium text-yellow-600">
-          {(player.goldEarned / 1000).toFixed(1)}k
-        </div>
-        <div className="text-xs text-gray-500">Gold</div>
-      </div>
-
-      <div className="flex space-x-1 w-56">
-        {player.items.slice(0, 6).map((itemId, index) => (
-          <ItemSlot key={index} itemId={itemId} />
-        ))}
-        <div className="w-1"></div>
-        <ItemSlot itemId={player.items[6]} />
-      </div>
-    </div>
-  );
-
-  const MatchCard = ({ match }) => {
-    const isExpanded = expandedMatch === match.matchId;
-    const teamBlue = match.allPlayers?.filter(p => p.teamId === 100) || [];
-    const teamRed = match.allPlayers?.filter(p => p.teamId === 200) || [];
-
-    return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden mb-4">
         <div 
-          className={`p-4 cursor-pointer transition-colors duration-200 border-l-4 ${
-            match.win 
-              ? 'border-green-500 bg-green-50 hover:bg-green-100' 
-              : 'border-red-500 bg-red-50 hover:bg-red-100'
-          }`}
-          onClick={() => toggleMatchDetails(match.matchId)}
+          className="p-4 cursor-pointer hover:bg-gray-750 transition-colors"
+          onClick={() => toggleMatchDetails(index)}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <img 
-                  src={getChampionImage(match.champ)} 
-                  alt={match.champ}
-                  className="w-12 h-12 rounded-full border-2 border-white shadow-md"
-                />
+              <div className="bg-blue-600 text-white px-3 py-1 rounded-lg font-bold">
+                Partie {index + 1}
               </div>
-
-              <div className="flex flex-col space-y-1">
-                <img 
-                  src={getSummonerSpellImage(match.summoners[0])} 
-                  alt="Spell"
-                  className="w-6 h-6 rounded"
-                />
-                <img 
-                  src={getSummonerSpellImage(match.summoners[1])} 
-                  alt="Spell"
-                  className="w-6 h-6 rounded"
-                />
-              </div>
-
-              <div>
-                <div className="font-semibold text-lg text-gray-900">
-                  {match.champ}
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span>{formatGameDuration(match.gameDuration)}</span>
-                  <span>•</span>
-                  <span>{match.date}</span>
+              
+              <div className="text-white">
+                <div className="font-semibold">Match #{match.gameId || 'N/A'}</div>
+                <div className="text-sm text-gray-400">
+                  Durée: {Math.round((match.gameDuration || 0) / 60)}min
                 </div>
               </div>
 
-              <div className="text-center bg-white rounded-lg px-4 py-2 shadow-sm">
-                <div className="font-bold text-lg text-gray-900">
-                  {match.kills}/{match.deaths}/{match.assists}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {getKDA(match.kills, match.deaths, match.assists)} KDA
-                </div>
-              </div>
-
-              <div className="text-center bg-white rounded-lg px-4 py-2 shadow-sm">
-                <div className="font-bold text-lg text-gray-900">{match.cs}</div>
-                <div className="text-sm text-gray-500">CS</div>
-              </div>
-
-              <div className="flex space-x-1">
-                {match.items.slice(0, 6).map((itemId, index) => (
-                  <ItemSlot key={index} itemId={itemId} />
-                ))}
-                <div className="w-1"></div>
-                <ItemSlot itemId={match.items[6]} />
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-300">{teamMembers.length} joueurs</span>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className={`px-4 py-2 rounded-full font-bold text-sm ${
-                match.win 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                {match.win ? 'VICTOIRE' : 'DÉFAITE'}
+              <div className="text-right">
+                <div className="text-white font-semibold">
+                  {match.result === 'WIN' ? '🏆 Victoire' : '💀 Défaite'}
+                </div>
+                <div className="text-sm text-gray-400">
+                  Side: {match.side || 'Unknown'}
+                </div>
               </div>
-
+              
               {isExpanded ? (
                 <ChevronUp className="w-5 h-5 text-gray-400" />
               ) : (
@@ -196,44 +68,136 @@ const MatchHistory = ({ matches }) => {
           </div>
         </div>
 
-        {isExpanded && match.allPlayers && (
-          <div className="border-t border-gray-200 bg-gray-50">
-            <div className="p-6 space-y-6">
-              <div>
-                <div className="flex items-center mb-3">
-                  <div className="w-4 h-4 bg-blue-500 rounded mr-2"></div>
-                  <h4 className="font-semibold text-blue-700">Équipe Bleue</h4>
-                  {teamBlue[0]?.win && (
-                    <Trophy className="w-4 h-4 text-yellow-500 ml-2" />
-                  )}
-                </div>
-                <div className="bg-white rounded-lg border border-gray-200">
-                  {teamBlue.map((player, index) => (
-                    <PlayerRow 
-                      key={index} 
-                      player={player} 
-                      isSearchedPlayer={player.isSearchedPlayer}
-                    />
-                  ))}
-                </div>
-              </div>
+        {isExpanded && (
+          <div className="border-t border-gray-700 bg-gray-900 p-6">
+            <h4 className="text-xl font-bold text-white mb-4 flex items-center">
+              <Target className="mr-2" />
+              Statistiques détaillées - Partie {index + 1}
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {teamMembers.map((player, playerIndex) => (
+                <div key={playerIndex} className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+                  <div className="text-center mb-3">
+                    <div className="bg-blue-600 text-white px-2 py-1 rounded text-sm font-bold mb-2">
+                      {player.role}
+                    </div>
+                    <div className="text-white font-semibold">{player.pseudo}</div>
+                  </div>
 
-              <div>
-                <div className="flex items-center mb-3">
-                  <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
-                  <h4 className="font-semibold text-red-700">Équipe Rouge</h4>
-                  {teamRed[0]?.win && (
-                    <Trophy className="w-4 h-4 text-yellow-500 ml-2" />
-                  )}
-                </div>
-                <div className="bg-white rounded-lg border border-gray-200">
-                  {teamRed.map((player, index) => (
-                    <PlayerRow 
-                      key={index} 
-                      player={player} 
-                      isSearchedPlayer={player.isSearchedPlayer}
+                  <div className="flex justify-center mb-3">
+                    <img 
+                      src={getChampionImage(player.championName)}
+                      alt={player.championName}
+                      className="w-16 h-16 rounded-full border-2 border-gray-600"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/64x64/374151/9CA3AF?text=?';
+                      }}
                     />
-                  ))}
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">KDA:</span>
+                      <span className="text-white font-semibold">
+                        {player.kills}/{player.deaths}/{player.assists}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Ratio:</span>
+                      <span className={`font-semibold ${
+                        player.kda >= 3 ? 'text-green-400' : 
+                        player.kda >= 2 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {player.kda}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Dégâts:</span>
+                      <span className="text-white">
+                        {(player.totalDamageDealtToChampions / 1000).toFixed(1)}k
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Gold:</span>
+                      <span className="text-yellow-400">
+                        {(player.goldEarned / 1000).toFixed(1)}k
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">CS:</span>
+                      <span className="text-white">{player.cs}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Vision:</span>
+                      <span className="text-purple-400">{player.visionScore}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Wards:</span>
+                      <span className="text-blue-400">{player.wardsPlaced}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Pinks:</span>
+                      <span className="text-pink-400">{player.visionWardsBought || 0}</span>
+                    </div>
+                  </div>
+
+                  {/* Items */}
+                  <div className="mt-3 pt-3 border-t border-gray-700">
+                    <div className="text-xs text-gray-400 mb-2">Items:</div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {[player.item0, player.item1, player.item2, player.item3, player.item4, player.item5].map((itemId, i) => (
+                        <div key={i} className="w-8 h-8 bg-gray-700 rounded border">
+                          {itemId && itemId !== 0 ? (
+                            <img 
+                              src={getItemImage(itemId)}
+                              alt="Item"
+                              className="w-full h-full rounded"
+                              onError={(e) => e.target.style.display = 'none'}
+                            />
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Résumé de la partie */}
+            <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-600">
+              <h5 className="text-lg font-semibold text-white mb-3">📊 Résumé de l'équipe</h5>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="text-gray-400">Total Kills</div>
+                  <div className="text-white font-bold text-xl">
+                    {teamMembers.reduce((sum, p) => sum + (p.kills || 0), 0)}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-gray-400">Total Gold</div>
+                  <div className="text-yellow-400 font-bold text-xl">
+                    {(teamMembers.reduce((sum, p) => sum + (p.goldEarned || 0), 0) / 1000).toFixed(0)}k
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-gray-400">Total Dégâts</div>
+                  <div className="text-red-400 font-bold text-xl">
+                    {(teamMembers.reduce((sum, p) => sum + (p.totalDamageDealtToChampions || 0), 0) / 1000).toFixed(0)}k
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-gray-400">Vision Score</div>
+                  <div className="text-purple-400 font-bold text-xl">
+                    {teamMembers.reduce((sum, p) => sum + (p.visionScore || 0), 0)}
+                  </div>
                 </div>
               </div>
             </div>
@@ -243,25 +207,32 @@ const MatchHistory = ({ matches }) => {
     );
   };
 
+  if (!matches.length) {
+    return (
+      <div className="text-center text-gray-400 py-12">
+        <div className="text-6xl mb-4">🎮</div>
+        <p className="text-xl mb-4">Aucune partie importée</p>
+        <p>Importez vos parties JSON pour voir l'historique détaillé</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-white flex items-center">
-          <Target className="mr-3 text-blue-600" />
-          Historique des matchs
-        </h3>
-        <div className="text-sm text-gray-400">
-          {matches.length} matchs récents
-        </div>
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Trophy className="mr-3 text-blue-600" />
+          Historique des matchs ({matches.length})
+        </h2>
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-4">
         {matches.map((match, index) => (
-          <MatchCard key={match.matchId || index} match={match} />
+          <MatchCard key={index} match={match} index={index} />
         ))}
       </div>
     </div>
   );
 };
 
-export default MatchHistory;
+export default EnhancedMatchHistory;

@@ -6,6 +6,8 @@ import CreateTeamModal from '../components/team/modals/CreateTeamModal';
 import InvitePlayerModal from '../components/team/modals/InvitePlayerModal';
 import ImportMatchModal from '../components/team/modals/ImportMatchModal';
 import TeamMembersView from '../components/team/views/TeamMembersView';
+import EnhancedMatchHistory from '../components/team/EnhancedMatchHistory';
+import TeamPlayerStats from '../components/team/TeamPlayerStats';
 
 // Composant de rendu du contenu selon la vue
 const TeamContent = ({ teamView, selectedTeam, setShowInvitePlayer, setShowImportMatch, removePlayer }) => {
@@ -22,64 +24,16 @@ const TeamContent = ({ teamView, selectedTeam, setShowInvitePlayer, setShowImpor
 
     case 'match-history':
       return (
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Historique des parties</h2>
-            <button
-              onClick={() => setShowImportMatch(true)}
-              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors text-white font-medium"
-            >
-              Importer une partie
-            </button>
-          </div>
-          
-          {selectedTeam?.matches && selectedTeam.matches.length > 0 ? (
-            <div className="space-y-4">
-              {selectedTeam.matches.map(match => (
-                <div key={match.id} className="bg-gray-800 p-4 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-white">Match #{match.gameId}</h3>
-                      <p className="text-sm text-gray-400">
-                        Importé le {new Date(match.importedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-400">Mode: {match.gameMode}</p>
-                      <p className="text-sm text-gray-400">
-                        Durée: {Math.floor((match.gameDuration || 0) / 60)}:{String((match.gameDuration || 0) % 60).padStart(2, '0')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-gray-400 text-center py-12">
-              <div className="text-6xl mb-4">🎮</div>
-              <p className="text-xl mb-4">Aucune partie importée</p>
-              <p className="mb-6">Importez vos parties pour voir l'historique</p>
-              <button
-                onClick={() => setShowImportMatch(true)}
-                className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg transition-colors text-white font-medium"
-              >
-                Importer une partie
-              </button>
-            </div>
-          )}
-        </div>
+        <EnhancedMatchHistory 
+          selectedTeam={selectedTeam}
+        />
       );
 
     case 'stats':
       return (
-        <div>
-          <h2 className="text-2xl font-bold mb-6 text-white">Statistiques de l'équipe</h2>
-          <div className="text-gray-400 text-center py-12">
-            <div className="text-6xl mb-4">📊</div>
-            <p className="text-xl mb-4">Statistiques en cours de développement</p>
-            <p>Les statistiques apparaîtront après l'import de parties</p>
-          </div>
-        </div>
+        <TeamPlayerStats 
+          selectedTeam={selectedTeam}
+        />
       );
 
     case 'pool-champ':
@@ -90,6 +44,10 @@ const TeamContent = ({ teamView, selectedTeam, setShowInvitePlayer, setShowImpor
             <div className="text-6xl mb-4">🏆</div>
             <p className="text-xl mb-4">Pool de champions de l'équipe</p>
             <p>Gérez les champions maîtrisés par chaque membre</p>
+            <div className="mt-6 text-sm">
+              <p>Cette fonctionnalité analysera automatiquement les champions les plus joués</p>
+              <p>par chaque membre de votre équipe basée sur l'historique des parties.</p>
+            </div>
           </div>
         </div>
       );
@@ -174,7 +132,7 @@ const Team = () => {
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Team Management</h1>
+            <h1 className="text-2xl font-bold text-white">Team Management</h1>
             <span className="text-gray-400">|</span>
             <span className="text-gray-400">Welcome, {user.username}</span>
           </div>
@@ -268,6 +226,9 @@ const Team = () => {
                 <p>👥 {selectedTeam.players.length} membres</p>
                 <p>🎮 {selectedTeam.matches?.length || 0} parties</p>
                 <p>📅 Créée le {new Date(selectedTeam.createdAt).toLocaleDateString()}</p>
+                {selectedTeam.matches?.length > 0 && (
+                  <p>📈 Dernière partie: {new Date(selectedTeam.matches[selectedTeam.matches.length - 1].importedAt).toLocaleDateString()}</p>
+                )}
               </div>
             </div>
           )}

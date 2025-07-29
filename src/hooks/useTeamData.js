@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { JSONParserService } from '../services/JSONParserService';
 
 const useTeamData = () => {
     // États principaux
@@ -22,7 +23,25 @@ const useTeamData = () => {
         };
         
         setUser(testUser);
+        
+        // Charger les données sauvegardées si elles existent
+        const savedTeams = localStorage.getItem('lol_analyzer_teams');
+        if (savedTeams) {
+            try {
+                const parsedTeams = JSON.parse(savedTeams);
+                setTeams(parsedTeams);
+            } catch (error) {
+                console.error('Erreur chargement teams:', error);
+            }
+        }
     }, []);
+
+    // Sauvegarder les équipes dans localStorage à chaque modification
+    useEffect(() => {
+        if (teams.length > 0) {
+            localStorage.setItem('lol_analyzer_teams', JSON.stringify(teams));
+        }
+    }, [teams]);
 
     // Fonctions d'authentification
     const handleAuth = (type, email, password) => {
@@ -57,6 +76,7 @@ const useTeamData = () => {
         setTeams([]);
         setSelectedTeam(null);
         setTeamView('team');
+        localStorage.removeItem('lol_analyzer_teams');
     };
 
     // Fonctions de gestion d'équipe
@@ -161,9 +181,47 @@ const useTeamData = () => {
             return;
         }
         
-        // Mode Riot API (désactivé pour éviter les erreurs CORS)
-        // En production, faire l'appel via votre backend
-        alert('API Riot temporairement désactivée (problème CORS). Utilisez le mode manuel.');
+        if (mode === 'riot') {
+            // Mode Riot - validation du format
+            if (!playerInput.includes('#')) {
+                alert('Format requis: Pseudo#TAG (ex: MonPseudo#EUW)');
+                return;
+            }
+
+            const existingPlayer = selectedTeam.players.find(p => 
+                p.riotId === playerInput
+            );
+            
+            if (existingPlayer) {
+                alert('Ce Riot ID est déjà dans l\'équipe');
+                return;
+            }
+
+            // Ajouter le joueur avec Riot ID
+            const newPlayer = {
+                id: Math.random().toString(36).substr(2, 9),
+                username: playerInput.split('#')[0],
+                role: 'player',
+                rank: 'Unranked',
+                riotId: playerInput,
+                status: 'active',
+                summonerLevel: null,
+                puuid: null,
+                isManual: false
+            };
+            
+            const updatedTeam = {
+                ...selectedTeam,
+                players: [...selectedTeam.players, newPlayer]
+            };
+            
+            const updatedTeams = teams.map(t => t.id === selectedTeam.id ? updatedTeam : t);
+            setTeams(updatedTeams);
+            setSelectedTeam(updatedTeam);
+            setShowInvitePlayer(false);
+            
+            console.log('Riot player added:', newPlayer);
+        }
     };
 
     const removePlayer = (playerId) => {
@@ -189,6 +247,7 @@ const useTeamData = () => {
         }
     };
 
+    // NOUVELLE FONCTION - Import amélioré avec parser JSON
     const importMatch = (jsonData) => {
         if (!selectedTeam) {
             alert('Aucune équipe sélectionnée');
@@ -196,10 +255,26 @@ const useTeamData = () => {
         }
         
         try {
-            // ICI : Vous intégrerez votre script de traitement JSON
+            // Obtenir les pseudos des membres de l'équipe
+            const teamPseudos = selectedTeam.players
+                .filter(p => p.riotId && p.riotId !== 'N/A')
+                .map(p => p.riotId);
+
+            console.log('Team pseudos for parsing:', teamPseudos);
+
+            // Parser le JSON avec notre service
+            const parseResult = JSONParserService.parseMatchJSON(jsonData, teamPseudos);
+            
+            if (!parseResult.success) {
+                alert(`Erreur de parsing: ${parseResult.error}`);
+                console.error('Parse error:', parseResult);
+                return;
+            }
+
+            // Créer le nouveau match avec les données parsées
             const newMatch = {
                 id: Math.random().toString(36).substr(2, 9),
-                ...jsonData,
+                ...parseResult.data,
                 importedAt: new Date().toISOString(),
                 teamId: selectedTeam.id
             };
@@ -214,12 +289,20 @@ const useTeamData = () => {
             setSelectedTeam(updatedTeam);
             setShowImportMatch(false);
             
-            alert('Partie importée avec succès !');
-            console.log('Match imported:', newMatch);
+            // Message de succès plus détaillé
+            const summary = JSONParserService.getMatchSummary(parseResult.data);
+            alert(`Partie importée avec succès !
+📊 ${parseResult.data.playersCount} joueurs trouvés
+⏱️ Durée: ${summary?.duration || 'N/A'}min
+🎯 Résultat: ${summary?.result || 'N/A'}
+🔵 Side: ${summary?.side || 'N/A'}`);
+            
+            console.log('Match imported with enhanced parser:', newMatch);
+            console.log('Match summary:', summary);
             
         } catch (error) {
             console.error('Error importing match:', error);
-            alert('Erreur lors de l\'import de la partie');
+            alert('Erreur lors de l\'import de la partie: ' + error.message);
         }
     };
 
