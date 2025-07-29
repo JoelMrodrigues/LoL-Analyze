@@ -1,101 +1,100 @@
 import React, { useState } from 'react';
+import { X, Upload, FileText } from 'lucide-react';
 
 const ImportMatchModal = ({ showImportMatch, setShowImportMatch, importMatch }) => {
-    const [dragActive, setDragActive] = useState(false);
+  const [jsonData, setJsonData] = useState('');
 
-    if (!showImportMatch) return null;
+  if (!showImportMatch) return null;
 
-    const handleFiles = (files) => {
-        const file = files[0];
-        if (!file) return;
-        
-        if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
-            alert('Veuillez sélectionner un fichier JSON valide');
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const jsonData = JSON.parse(e.target.result);
-                importMatch(jsonData);
-            } catch (error) {
-                console.error('JSON parsing error:', error);
-                alert('Fichier JSON invalide ou corrompu');
-            }
-        };
-        reader.readAsText(file);
+  const onSubmit = (e) => {
+    e.preventDefault();
+    try {
+      const parsedData = JSON.parse(jsonData);
+      importMatch(parsedData);
+      setJsonData('');
+    } catch (error) {
+      alert('JSON invalide. Veuillez vérifier le format.');
+    }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setJsonData(event.target.result);
     };
+    reader.readAsText(file);
+  };
 
-    const handleDrag = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.type === "dragenter" || e.type === "dragover") {
-            setDragActive(true);
-        } else if (e.type === "dragleave") {
-            setDragActive(false);
-        }
-    };
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            handleFiles(e.dataTransfer.files);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-8 rounded-lg w-96 relative">
-                <button
-                    onClick={() => setShowImportMatch(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-                >
-                    ✕
-                </button>
-                
-                <h2 className="text-2xl font-bold mb-6 text-white">Importer une partie</h2>
-                
-                <div 
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                        dragActive 
-                            ? 'border-blue-400 bg-blue-400 bg-opacity-10' 
-                            : 'border-gray-600 hover:border-gray-500'
-                    }`}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
-                >
-                    <div className="text-4xl mb-4">📄</div>
-                    <p className="text-gray-300 mb-4">
-                        Glissez votre fichier JSON ici
-                    </p>
-                    <p className="text-sm text-gray-400 mb-4">ou</p>
-                    <input
-                        type="file"
-                        accept=".json,application/json"
-                        onChange={(e) => handleFiles(e.target.files)}
-                        className="hidden"
-                        id="file-upload"
-                    />
-                    <label
-                        htmlFor="file-upload"
-                        className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg cursor-pointer inline-block transition-colors text-white font-medium"
-                    >
-                        Choisir un fichier
-                    </label>
-                </div>
-                
-                <div className="mt-4 text-sm text-gray-400">
-                    <p>Formats acceptés: .json</p>
-                    <p>Taille maximum: 10MB</p>
-                </div>
-            </div>
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+            <Upload className="w-6 h-6 mr-2 text-green-600" />
+            Importer une partie
+          </h2>
+          <button
+            onClick={() => setShowImportMatch(false)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
-    );
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Uploader un fichier JSON
+            </label>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileUpload}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="text-center text-gray-500">
+            ou
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FileText className="inline w-4 h-4 mr-1" />
+              Coller les données JSON
+            </label>
+            <textarea
+              value={jsonData}
+              onChange={(e) => setJsonData(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={10}
+              placeholder='{"gameId": "12345", "gameMode": "CLASSIC", ...}'
+            />
+          </div>
+
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <h4 className="font-medium text-yellow-900 mb-2">⚠️ Format attendu</h4>
+            <ul className="text-sm text-yellow-800 space-y-1">
+              <li>• Données JSON valides d'une partie LoL</li>
+              <li>• Format Riot Games API recommandé</li>
+              <li>• Vérifiez la syntaxe avant d'importer</li>
+            </ul>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!jsonData.trim()}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            Importer la partie
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default ImportMatchModal;

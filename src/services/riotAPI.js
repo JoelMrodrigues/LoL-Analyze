@@ -1,90 +1,117 @@
-const RIOT_API_KEY = 'RGAPI-257cd474-7cde-4100-8725-f436f39182a3';
+// Configuration centralisée
+const RIOT_API_CONFIG = {
+  key: 'RGAPI-257cd474-7cde-4100-8725-f436f39182a3',
+  version: '14.1.1',
+  endpoints: {
+    account: 'https://europe.api.riotgames.com/riot/account/v1',
+    match: 'https://europe.api.riotgames.com/lol/match/v5',
+    summoner: 'https://euw1.api.riotgames.com/lol/summoner/v4'
+  }
+};
 
+// Service API Riot centralisé
 export const riotAPI = {
+  // Récupérer les informations du joueur
   async getSummonerInfo(pseudoComplet) {
     if (!pseudoComplet || !pseudoComplet.includes("#")) {
       throw new Error("Le pseudo doit contenir un # (ex: Nom#TAG)");
     }
 
     const [gameName, tagLine] = pseudoComplet.split('#');
-    const url = `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
+    const url = `${RIOT_API_CONFIG.endpoints.account}/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
     
-    const response = await fetch(url, {
-      headers: { "X-Riot-Token": RIOT_API_KEY }
-    });
+    try {
+      const response = await fetch(url, {
+        headers: { "X-Riot-Token": RIOT_API_CONFIG.key }
+      });
 
-    if (!response.ok) {
-      throw new Error(`Erreur API: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Joueur non trouvé (${response.status})`);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(`Erreur de connexion à l'API Riot: ${error.message}`);
     }
-
-    return response.json();
   },
 
+  // Récupérer la liste des IDs de matchs
   async getMatchIds(puuid, queue, start = 0, count = 20) {
-    let url = `https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
+    let url = `${RIOT_API_CONFIG.endpoints.match}/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
     if (queue) url += `&queue=${queue}`;
 
-    const response = await fetch(url, {
-      headers: { "X-Riot-Token": RIOT_API_KEY }
-    });
+    try {
+      const response = await fetch(url, {
+        headers: { "X-Riot-Token": RIOT_API_CONFIG.key }
+      });
 
-    if (!response.ok) {
-      throw new Error(`Erreur récupération matchs: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Erreur récupération matchs: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      throw new Error(`Impossible de récupérer l'historique: ${error.message}`);
     }
-
-    return response.json();
   },
 
+  // Récupérer les détails d'un match
   async getMatchDetails(matchId, puuid) {
-    const url = `https://europe.api.riotgames.com/lol/match/v5/matches/${matchId}`;
+    const url = `${RIOT_API_CONFIG.endpoints.match}/matches/${matchId}`;
     
-    const response = await fetch(url, {
-      headers: { "X-Riot-Token": RIOT_API_KEY }
-    });
+    try {
+      const response = await fetch(url, {
+        headers: { "X-Riot-Token": RIOT_API_CONFIG.key }
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const participant = data.info.participants.find(p => p.puuid === puuid);
+      if (!participant) return null;
+
+      return {
+        matchId,
+        champ: participant.championName,
+        kills: participant.kills,
+        deaths: participant.deaths,
+        assists: participant.assists,
+        cs: participant.totalMinionsKilled + participant.neutralMinionsKilled,
+        win: participant.win,
+        gameDuration: data.info.gameDuration,
+        date: new Date(data.info.gameStartTimestamp).toLocaleDateString(),
+        items: [
+          participant.item0, participant.item1, participant.item2,
+          participant.item3, participant.item4, participant.item5, participant.item6
+        ],
+        summoners: [participant.summoner1Id, participant.summoner2Id],
+        allPlayers: data.info.participants.map(p => ({
+          puuid: p.puuid,
+          summonerName: p.riotIdGameName || p.summonerName,
+          tagLine: p.riotIdTagline || '',
+          championName: p.championName,
+          kills: p.kills,
+          deaths: p.deaths,
+          assists: p.assists,
+          cs: p.totalMinionsKilled + p.neutralMinionsKilled,
+          items: [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5, p.item6],
+          summoners: [p.summoner1Id, p.summoner2Id],
+          level: p.champLevel,
+          goldEarned: p.goldEarned,
+          teamId: p.teamId,
+          win: p.win,
+          isSearchedPlayer: p.puuid === puuid
+        }))
+      };
+    } catch (error) {
+      console.error(`Erreur match ${matchId}:`, error);
       return null;
     }
-
-    const data = await response.json();
-    const participant = data.info.participants.find(p => p.puuid === puuid);
-    if (!participant) return null;
-
-    return {
-      matchId,
-      champ: participant.championName,
-      kills: participant.kills,
-      deaths: participant.deaths,
-      assists: participant.assists,
-      cs: participant.totalMinionsKilled + participant.neutralMinionsKilled,
-      win: participant.win,
-      gameDuration: data.info.gameDuration,
-      date: new Date(data.info.gameStartTimestamp).toLocaleDateString(),
-      items: [
-        participant.item0, participant.item1, participant.item2,
-        participant.item3, participant.item4, participant.item5, participant.item6
-      ],
-      summoners: [participant.summoner1Id, participant.summoner2Id],
-      allPlayers: data.info.participants.map(p => ({
-        puuid: p.puuid,
-        summonerName: p.riotIdGameName || p.summonerName,
-        tagLine: p.riotIdTagline || '',
-        championName: p.championName,
-        kills: p.kills,
-        deaths: p.deaths,
-        assists: p.assists,
-        cs: p.totalMinionsKilled + p.neutralMinionsKilled,
-        items: [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5, p.item6],
-        summoners: [p.summoner1Id, p.summoner2Id],
-        level: p.champLevel,
-        goldEarned: p.goldEarned,
-        teamId: p.teamId,
-        win: p.win,
-        isSearchedPlayer: p.puuid === puuid
-      }))
-    };
   },
 
+  // Recherche complète de profil
   async rechercherProfil(pseudo, queue) {
     try {
       const summoner = await this.getSummonerInfo(pseudo);
@@ -101,19 +128,17 @@ export const riotAPI = {
   }
 };
 
+// Utilitaires d'images centralisés
 export const getChampionImage = (championName) => {
-  const version = '14.1.1';
-  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${championName}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${RIOT_API_CONFIG.version}/img/champion/${championName}.png`;
 };
 
 export const getItemImage = (itemId) => {
-  const version = '14.1.1';
   if (!itemId || itemId === 0) return null;
-  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${itemId}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${RIOT_API_CONFIG.version}/img/item/${itemId}.png`;
 };
 
 export const getSummonerSpellImage = (spellId) => {
-  const version = '14.1.1';
   const spellNames = {
     1: 'SummonerBoost', 3: 'SummonerExhaust', 4: 'SummonerFlash',
     6: 'SummonerHaste', 7: 'SummonerHeal', 11: 'SummonerSmite',
@@ -123,5 +148,5 @@ export const getSummonerSpellImage = (spellId) => {
   };
   
   const spellName = spellNames[spellId] || 'SummonerFlash';
-  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/spell/${spellName}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${RIOT_API_CONFIG.version}/img/spell/${spellName}.png`;
 };

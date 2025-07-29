@@ -1,125 +1,78 @@
 import React, { useState } from 'react';
+import { X, Upload } from 'lucide-react';
 
-const InvitePlayerModal = ({ 
-    showInvitePlayer, 
-    setShowInvitePlayer, 
-    invitePlayer, 
-    addPlayerMode, 
-    setAddPlayerMode 
-}) => {
-    const [playerInput, setPlayerInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+const ImportMatchModal = ({ showImportMatch, setShowImportMatch, importMatch, error }) => {
+  const [matchId, setMatchId] = useState('');
 
-    if (!showInvitePlayer) return null;
+  if (!showImportMatch) return null;
 
-    const handleInvite = async () => {
-        setIsLoading(true);
-        try {
-            await invitePlayer(playerInput, addPlayerMode);
-            setPlayerInput(''); // Reset form
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (!matchId.trim()) {
+      alert('Veuillez entrer un ID de match');
+      return;
+    }
+    importMatch(matchId);
+    setMatchId('');
+  };
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-8 rounded-lg w-96 relative">
-                <button
-                    onClick={() => setShowInvitePlayer(false)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
-                >
-                    ✕
-                </button>
-                
-                <h2 className="text-2xl font-bold mb-6 text-white">Ajouter un joueur</h2>
-                
-                {/* Sélection du mode */}
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Mode d'ajout
-                    </label>
-                    <div className="flex gap-3 mb-4">
-                        <button
-                            onClick={() => setAddPlayerMode('riot')}
-                            className={`flex-1 p-3 rounded-lg font-medium transition-colors ${
-                                addPlayerMode === 'riot' 
-                                    ? 'bg-blue-600 text-white' 
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
-                        >
-                            🎮 Compte LoL
-                        </button>
-                        <button
-                            onClick={() => setAddPlayerMode('manual')}
-                            className={`flex-1 p-3 rounded-lg font-medium transition-colors ${
-                                addPlayerMode === 'manual' 
-                                    ? 'bg-green-600 text-white' 
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                            }`}
-                        >
-                            ✏️ Manuel
-                        </button>
-                    </div>
-                </div>
-                
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                        {addPlayerMode === 'riot' ? 'Pseudo League of Legends' : 'Nom du joueur'}
-                    </label>
-                    <input
-                        type="text"
-                        placeholder={addPlayerMode === 'riot' ? 'Ex: PlayerName ou PlayerName#TAG' : 'Ex: Benoit'}
-                        value={playerInput}
-                        onChange={(e) => setPlayerInput(e.target.value)}
-                        className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-                        disabled={isLoading}
-                        onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleInvite()}
-                    />
-                    <div className="mt-3 text-sm text-gray-400 space-y-1">
-                        {addPlayerMode === 'riot' ? (
-                            <>
-                                <p><strong>Exemples:</strong></p>
-                                <p>• PlayerName (utilisera #EUW par défaut)</p>
-                                <p>• PlayerName#TAG (avec tag personnalisé)</p>
-                                <p className="text-yellow-400">⚠️ Récupère automatiquement le rang et niveau</p>
-                            </>
-                        ) : (
-                            <>
-                                <p><strong>Mode manuel:</strong></p>
-                                <p>• Ajout simple par nom (ex: Benoit)</p>
-                                <p>• Pas de données LoL récupérées</p>
-                            </>
-                        )}
-                    </div>
-                </div>
-                
-                <div className="flex gap-3">
-                    <button
-                        onClick={handleInvite}
-                        disabled={!playerInput.trim() || isLoading}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed p-3 rounded-lg font-medium transition-colors text-white flex items-center justify-center gap-2"
-                    >
-                        {isLoading ? (
-                            <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                {addPlayerMode === 'riot' ? 'Recherche...' : 'Ajout...'}
-                            </>
-                        ) : (
-                            'Ajouter'
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setShowInvitePlayer(false)}
-                        disabled={isLoading}
-                        className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 p-3 rounded-lg font-medium transition-colors text-white"
-                    >
-                        Annuler
-                    </button>
-                </div>
-            </div>
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+            <Upload className="w-6 h-6 mr-2 text-green-600" />
+            Importer une partie
+          </h2>
+          <button
+            onClick={() => setShowImportMatch(false)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
-    );
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              ID du Match Riot
+            </label>
+            <input
+              type="text"
+              value={matchId}
+              onChange={(e) => setMatchId(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="EUW1_1234567890"
+              required
+            />
+          </div>
+
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">💡 Comment trouver l'ID ?</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Utilisez un site comme OP.GG ou U.GG</li>
+              <li>• L'ID se trouve dans l'URL du match</li>
+              <li>• Format: EUW1_1234567890</li>
+            </ul>
+          </div>
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={!matchId.trim()}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            Importer la partie
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
-export default InvitePlayerModal;
+export default ImportMatchModal;

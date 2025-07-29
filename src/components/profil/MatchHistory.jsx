@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Clock, Trophy, Target } from 'lucide-react';
 import { getChampionImage, getItemImage, getSummonerSpellImage } from '../../services/riotAPI';
+import { formatGameDuration, getKDA } from '../../utils/statsCalculator';
 
 const MatchHistory = ({ matches }) => {
   const [expandedMatch, setExpandedMatch] = useState(null);
@@ -9,16 +10,6 @@ const MatchHistory = ({ matches }) => {
 
   const toggleMatchDetails = (matchId) => {
     setExpandedMatch(expandedMatch === matchId ? null : matchId);
-  };
-
-  const formatGameDuration = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const getKDA = (kills, deaths, assists) => {
-    return deaths === 0 ? 'Perfect' : ((kills + assists) / deaths).toFixed(2);
   };
 
   const ItemSlot = ({ itemId }) => {

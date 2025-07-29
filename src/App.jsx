@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import Accueil from './pages/Accueil';
 import Profil from './pages/Profil';
+import Analyse from './pages/Analyse';
 import Team from './pages/Team';
 
 // Composant temporaire pour les pages pas encore créées
@@ -28,18 +30,18 @@ const ComingSoon = ({ title, color = "blue" }) => (
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Accueil />} />
-        <Route path="/profil" element={<Profil />} />
-        <Route path="/analyse" element={<ComingSoon title="Analyse Avancée" color="green" />} />
-        <Route path="/data-champ" element={<ComingSoon title="Data Champions" color="purple" />} />
-        <Route path="/data-side" element={<ComingSoon title="Data Sides" color="purple" />} />
-        <Route path="/amelioration" element={<ComingSoon title="Conseils d'Amélioration" color="orange" />} />
-        <Route path="/top-tier" element={<ComingSoon title="Top Tier List" color="yellow" />} />
-        <Route path="/team" element={<Team />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Accueil />} />
+          <Route path="/profil" element={<Profil />} />
+          <Route path="/analyse" element={<Analyse />} />
+          <Route path="/data-champ" element={<ComingSoon title="Data Champions" color="purple" />} />
+          <Route path="/amelioration" element={<ComingSoon title="Conseils d'Amélioration" color="orange" />} />
+          <Route path="/team" element={<Team />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

@@ -1,26 +1,12 @@
 import React from 'react';
 import { Trophy, Target, TrendingUp, Clock, Zap, Shield, Sword } from 'lucide-react';
 import StatsCard from '../ui/StatsCard';
+import { calculateAdvancedStats } from '../../utils/statsCalculator';
 
 const StatsGrid = ({ stats, matches }) => {
   if (!stats) return null;
 
-  const calculateAdvancedStats = () => {
-    if (!matches?.length) return {};
-    
-    const recentMatches = matches.slice(0, 10);
-    const avgGameDuration = recentMatches.reduce((sum, m) => sum + m.gameDuration, 0) / recentMatches.length;
-    const perfectGames = recentMatches.filter(m => m.deaths === 0).length;
-    const multikills = recentMatches.filter(m => m.kills >= 5 && m.assists >= 2).length;
-    
-    return {
-      avgGameDuration: Math.floor(avgGameDuration / 60),
-      perfectGamesPercent: ((perfectGames / recentMatches.length) * 100).toFixed(0),
-      multikills: multikills
-    };
-  };
-
-  const advancedStats = calculateAdvancedStats();
+  const advancedStats = calculateAdvancedStats(matches);
 
   return (
     <div className="mb-8">
@@ -30,7 +16,7 @@ const StatsGrid = ({ stats, matches }) => {
           value={`${stats.winRate}%`}
           icon={Trophy}
           color="green"
-          subtitle={`${Math.round((matches?.length || 0) * (stats.winRate / 100))} victoires`}
+          subtitle={`${stats.wins}/${stats.totalGames} victoires`}
         />
         <StatsCard
           title="KDA Moyen"
