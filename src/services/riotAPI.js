@@ -1,6 +1,6 @@
 // Configuration centralisée
 const RIOT_API_CONFIG = {
-  key: 'RGAPI-257cd474-7cde-4100-8725-f436f39182a3',
+  key: 'RGAPI-0e3fd056-be32-4d3c-909b-696a14a9bb23',
   version: '14.1.1',
   endpoints: {
     account: 'https://europe.api.riotgames.com/riot/account/v1',
@@ -35,7 +35,7 @@ export const riotAPI = {
     }
   },
 
-  // Récupérer la liste des IDs de matchs
+  // Récupérer la liste des IDs de matchs avec pagination automatique
   async getMatchIds(puuid, queue, start = 0, count = 20) {
     let url = `${RIOT_API_CONFIG.endpoints.match}/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
     if (queue) url += `&queue=${queue}`;
@@ -53,6 +53,25 @@ export const riotAPI = {
     } catch (error) {
       throw new Error(`Impossible de récupérer l'historique: ${error.message}`);
     }
+  },
+
+  // Nouvelle fonction utilitaire pour récupérer jusqu'à limit matchs en paginant
+  async getAllMatchIds(puuid, queue, maxMatches = 100) {
+    const batchSize = 100; // max 100 par requête
+    let allMatches = [];
+    let start = 0;
+
+    while (allMatches.length < maxMatches) {
+      const count = Math.min(batchSize, maxMatches - allMatches.length);
+      const batch = await this.getMatchIds(puuid, queue, start, count);
+      if (!batch || batch.length === 0) break;
+
+      allMatches = allMatches.concat(batch);
+      if (batch.length < count) break; // plus de résultats
+      start += batchSize;
+    }
+
+    return allMatches;
   },
 
   // Récupérer les détails d'un match
@@ -111,11 +130,11 @@ export const riotAPI = {
     }
   },
 
-  // Recherche complète de profil
-  async rechercherProfil(pseudo, queue) {
+  // Recherche complète de profil, avec passage de la limite
+  async rechercherProfil(pseudo, queue, limit = 100) {
     try {
       const summoner = await this.getSummonerInfo(pseudo);
-      const matches = await this.getMatchIds(summoner.puuid, queue, 0, 20);
+      const matches = await this.getAllMatchIds(summoner.puuid, queue, limit);
       
       const matchDetails = await Promise.all(
         matches.map(id => this.getMatchDetails(id, summoner.puuid))
