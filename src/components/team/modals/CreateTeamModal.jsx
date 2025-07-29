@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Users } from 'lucide-react';
 
-const CreateTeamModal = ({ showCreateTeam, setShowCreateTeam, createTeam, error }) => {
+const CreateTeamModal = ({ showCreateTeam, setShowCreateTeam, createTeam }) => {
   const [teamName, setTeamName] = useState('');
 
   if (!showCreateTeam) return null;
@@ -51,12 +51,6 @@ const CreateTeamModal = ({ showCreateTeam, setShowCreateTeam, createTeam, error 
               <li>• Seul le propriétaire peut supprimer l'équipe</li>
             </ul>
           </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
 
           <button
             type="submit"

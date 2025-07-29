@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trophy, Target, TrendingUp, Clock, Zap, Shield, Sword } from 'lucide-react';
 import StatsCard from '../ui/StatsCard';
-import { calculateAdvancedStats } from '../../utils/statsCalculator';
+import { calculateAdvancedStats } from '../../utils/statsCalucaltor';
 
 const StatsGrid = ({ stats, matches }) => {
   if (!stats) return null;

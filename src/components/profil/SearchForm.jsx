@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, User, Gamepad2 } from 'lucide-react';
-import { queueTypes } from '../../utils/statsCalculator';
+import { queueTypes } from '../../utils/statsCalucaltor';
 
 const SearchForm = ({ 
   pseudo, 

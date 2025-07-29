@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User } from 'lucide-react';
 
-const AuthModal = ({ showAuth, setShowAuth, handleAuth, handleGoogleAuth, error }) => {
+const AuthModal = ({ showAuth, setShowAuth, handleAuth, handleGoogleAuth }) => {
   const [authType, setAuthType] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,12 +68,6 @@ const AuthModal = ({ showAuth, setShowAuth, handleAuth, handleGoogleAuth, error 
             {authType === 'login' ? 'Se connecter' : 'S\'inscrire'}
           </button>
         </form>
-
-        {error && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
 
         <div className="mt-4">
           <button

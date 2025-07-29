@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
 import Accueil from './pages/Accueil';
 import Profil from './pages/Profil';
 import Analyse from './pages/Analyse';
@@ -30,18 +29,16 @@ const ComingSoon = ({ title, color = "blue" }) => (
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Accueil />} />
-          <Route path="/profil" element={<Profil />} />
-          <Route path="/analyse" element={<Analyse />} />
-          <Route path="/data-champ" element={<ComingSoon title="Data Champions" color="purple" />} />
-          <Route path="/amelioration" element={<ComingSoon title="Conseils d'Amélioration" color="orange" />} />
-          <Route path="/team" element={<Team />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Accueil />} />
+        <Route path="/profil" element={<Profil />} />
+        <Route path="/analyse" element={<Analyse />} />
+        <Route path="/data-champ" element={<ComingSoon title="Data Champions" color="purple" />} />
+        <Route path="/amelioration" element={<ComingSoon title="Conseils d'Amélioration" color="orange" />} />
+        <Route path="/team" element={<Team />} />
+      </Routes>
+    </Router>
   );
 }
 

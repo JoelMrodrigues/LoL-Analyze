@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Clock, Trophy, Target } from 'lucide-react';
 import { getChampionImage, getItemImage, getSummonerSpellImage } from '../../services/riotAPI';
-import { formatGameDuration, getKDA } from '../../utils/statsCalculator';
+import { formatGameDuration, getKDA } from '../../utils/statsCalucaltor';
 
 const MatchHistory = ({ matches }) => {
   const [expandedMatch, setExpandedMatch] = useState(null);
