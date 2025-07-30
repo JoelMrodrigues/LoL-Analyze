@@ -1,30 +1,5 @@
 // src/components/analyse/InsightsPanel.jsx
 import React from "react";
-export const calculateStats = (matches) => {
-  if (!matches || matches.length === 0) return null;
-
-  const validMatches = matches.filter(m => m && m.kills !== undefined && m.deaths !== undefined && m.assists !== undefined);
-
-  if (validMatches.length === 0) return null;
-
-  const totalKills = validMatches.reduce((sum, m) => sum + m.kills, 0);
-  const totalDeaths = validMatches.reduce((sum, m) => sum + m.deaths, 0);
-  const totalAssists = validMatches.reduce((sum, m) => sum + m.assists, 0);
-
-  // Eviter division par 0
-  const avgKills = totalKills / validMatches.length;
-  const avgDeaths = totalDeaths / validMatches.length || 1;
-  const avgAssists = totalAssists / validMatches.length;
-
-  const kda = ((avgKills + avgAssists) / avgDeaths).toFixed(2);
-
-  // Autres stats à calculer pareil
-
-  return {
-    kda,
-    // ...
-  };
-};
 
 const InsightsPanel = ({ stats }) => {
   if (!stats || Object.keys(stats).length === 0) return null;

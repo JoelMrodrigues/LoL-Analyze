@@ -11,6 +11,12 @@ const SearchForm = ({
   loading, 
   error 
 }) => {
+  // Ajouter l'option "Tous les modes" aux types de file
+  const extendedQueueTypes = {
+    '': 'Tous les modes',
+    ...queueTypes
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mb-8">
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
@@ -57,7 +63,7 @@ const SearchForm = ({
               onChange={(e) => setQueue(e.target.value)}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-200 text-lg cursor-pointer"
             >
-              {Object.entries(queueTypes).map(([id, name]) => (
+              {Object.entries(extendedQueueTypes).map(([id, name]) => (
                 <option key={id} value={id}>{name}</option>
               ))}
             </select>
@@ -105,8 +111,9 @@ const SearchForm = ({
           <h4 className="font-medium text-blue-900 mb-2">💡 Conseils</h4>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Utilisez votre Riot ID complet avec le #TAG (ex: MonPseudo#FR1)</li>
+            <li>• Sélectionnez "Tous les modes" pour voir l'historique complet</li>
             <li>• Les données sont mises à jour en temps réel via l'API Riot</li>
-            <li>• Cliquez sur un match pour voir tous les joueurs de la partie</li>
+            <li>• Cliquez sur "Afficher plus" pour charger plus de parties</li>
           </ul>
         </div>
       </div>

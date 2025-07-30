@@ -15,3 +15,35 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Animation pour les slots actifs */
+@keyframes pulse-draft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-draft {
+  animation: pulse-draft 2s ease-in-out infinite;
+}
+
+/* Scrollbar personnalisée pour la liste des champions */
+.champion-selector::-webkit-scrollbar {
+  width: 6px;
+}
+
+.champion-selector::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.champion-selector::-webkit-scrollbar-thumb {
+  background: #6B7280;
+  border-radius: 3px;
+}
+
+.champion-selector::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}

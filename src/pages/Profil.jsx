@@ -1,20 +1,30 @@
 import React, { useState } from 'react';
-import { Search, User } from 'lucide-react';
+import { Search, User, Loader2 } from 'lucide-react';
 import Layout from '../components/common/Layout';
 import SearchForm from '../components/profil/SearchForm';
 import StatsGrid from '../components/profil/StatsGrid';
-import MatchHistory from '../components/profil/MatchHistory';
 import EmptyState from '../components/common/EmptyState';
 import { riotAPI } from '../services/riotAPI';
 import { calculateStats } from '../utils/statsCalucaltor';
 
+// Import du composant MatchHistory amélioré du paste.txt
+import MatchHistoryEnhanced from '../components/profil/MatchHistoryEnhanced.jsx';
+
 const Profil = () => {
   const [pseudo, setPseudo] = useState('');
-  const [queue, setQueue] = useState('420');
+  const [queue, setQueue] = useState('');  // Vide = tous les modes par défaut
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [stats, setStats] = useState(null);
+  
+  // États pour la pagination
+  const [currentSummoner, setCurrentSummoner] = useState(null);
+  const [hasMoreMatches, setHasMoreMatches] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const MATCHES_PER_PAGE = 20;
 
   const handleSearch = async () => {
     if (!pseudo.trim()) {
@@ -24,17 +34,93 @@ const Profil = () => {
 
     setLoading(true);
     setError('');
+    setMatches([]);
+    setStats(null);
+    setCurrentPage(0);
+    setHasMoreMatches(true);
     
     try {
-      const matchData = await riotAPI.rechercherProfil(pseudo, queue);
-      setMatches(matchData);
-      setStats(calculateStats(matchData));
+      // Récupérer les infos du joueur
+      const summoner = await riotAPI.getSummonerInfo(pseudo);
+      setCurrentSummoner(summoner);
+      
+      // Charger les premiers matchs
+      await loadMatches(summoner, 0, true);
+      
     } catch (err) {
       setError(err.message || 'Erreur lors de la recherche');
       setMatches([]);
       setStats(null);
+      setCurrentSummoner(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMatches = async (summoner, startIndex, isInitialLoad = false) => {
+    try {
+      // Récupérer les IDs des matchs
+      const matchIds = await riotAPI.getMatchIds(
+        summoner.puuid, 
+        queue || null,  // Si queue est vide, on passe null pour récupérer tous les modes
+        startIndex, 
+        MATCHES_PER_PAGE
+      );
+
+      if (matchIds.length === 0) {
+        setHasMoreMatches(false);
+        return;
+      }
+
+      // Charger les détails des matchs
+      const matchDetails = await Promise.all(
+        matchIds.map(id => riotAPI.getMatchDetails(id, summoner.puuid))
+      );
+      
+      const validMatches = matchDetails.filter(Boolean);
+      
+      if (isInitialLoad) {
+        setMatches(validMatches);
+        setStats(calculateStats(validMatches));
+      } else {
+        setMatches(prevMatches => [...prevMatches, ...validMatches]);
+        // Recalculer les stats avec tous les matchs
+        const allMatches = [...matches, ...validMatches];
+        setStats(calculateStats(allMatches));
+      }
+
+      // Vérifier s'il y a encore des matchs à charger
+      if (matchIds.length < MATCHES_PER_PAGE) {
+        setHasMoreMatches(false);
+      }
+
+    } catch (err) {
+      console.error('Erreur lors du chargement des matchs:', err);
+      if (isInitialLoad) {
+        throw err;
+      } else {
+        setError('Erreur lors du chargement des matchs supplémentaires');
+      }
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!currentSummoner || !hasMoreMatches || loadingMore) return;
+
+    setLoadingMore(true);
+    setError('');
+
+    try {
+      const nextPage = currentPage + 1;
+      const startIndex = nextPage * MATCHES_PER_PAGE;
+      
+      await loadMatches(currentSummoner, startIndex, false);
+      setCurrentPage(nextPage);
+      
+    } catch (err) {
+      setError('Erreur lors du chargement des matchs supplémentaires');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -81,8 +167,43 @@ const Profil = () => {
           />
 
           <StatsGrid stats={stats} matches={matches} />
-          <MatchHistory matches={matches} />
           
+          {/* Historique des matchs avec l'affichage amélioré */}
+          <MatchHistoryEnhanced matches={matches} />
+          
+          {/* Bouton "Afficher plus" */}
+          {matches.length > 0 && hasMoreMatches && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Chargement...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-5 h-5" />
+                    <span>Afficher plus de parties</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Message de fin */}
+          {matches.length > 0 && !hasMoreMatches && (
+            <div className="text-center mt-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
+              <p className="text-gray-400">
+                🎯 Toutes les parties disponibles ont été chargées ({matches.length} parties au total)
+              </p>
+            </div>
+          )}
+
+          {/* État vide */}
           {!loading && matches.length === 0 && !error && <EmptyState />}
         </div>
       </section>
