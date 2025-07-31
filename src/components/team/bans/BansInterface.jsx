@@ -26,7 +26,7 @@ const BansInterface = ({
   teamData,
   onBack = () => {} 
 }) => {
-  const [currentView, setCurrentView] = useState('selector'); // 'selector', 'our-bans', 'enemy-bans', 'draft-detail'
+  const [currentView, setCurrentView] = useState('selector'); // 'selector', 'our-bans', 'enemy-bans', 'draft-detail', 'our-stats', 'enemy-stats'
   const [urlProjects, setUrlProjects] = useState([]);
   const [expandedProjects, setExpandedProjects] = useState(new Set());
   const [editingItem, setEditingItem] = useState(null);
@@ -95,6 +95,13 @@ const BansInterface = ({
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
+
+  // Fonction utilitaire pour obtenir l'image d'un champion
+  const getChampionImage = (championName) => {
+    // Nettoyer le nom pour l'URL (supprimer espaces, apostrophes, etc.)
+    const cleanName = championName.replace(/[^a-zA-Z0-9]/g, '');
+    return `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/champion/${cleanName}.png`;
+  };
 
   // Vérifier si une équipe est "Exalty" (avec variantes)
   const isExaltyTeam = (teamName) => {
@@ -225,7 +232,7 @@ const BansInterface = ({
     setExpandedProjects(newExpanded);
   };
 
-  // Traitement des URLs (simulation basée sur votre script)
+  // Traitement des URLs avec la vraie API
   const processUrl = async (urlItem) => {
     try {
       // Marquer comme en cours de traitement
@@ -242,27 +249,32 @@ const BansInterface = ({
         return project;
       }));
 
-      // Simulation de données de bans (remplacez par votre logique réelle)
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulation délai
-
-      // Simuler parfois des noms d'équipes manquants
-      const hasTeamNames = Math.random() > 0.3; // 70% de chance d'avoir des noms
+      // Importer le service API
+      const { processSingleDraft } = await import('../../../services/apiService');
       
-      const mockDraftData = {
+      console.log(`🔄 Traitement de l'URL: ${urlItem.url}`);
+      
+      // Appeler l'API pour traiter l'URL
+      const apiResult = await processSingleDraft(urlItem.url);
+      
+      // Créer l'objet draft avec les vraies données
+      const draftData = {
         id: generateId(),
         url: urlItem.url,
         urlId: urlItem.id,
         processedAt: new Date().toISOString(),
-        team1Name: hasTeamNames ? (Math.random() > 0.5 ? 'Team EXALTY' : 'Enemy Squad') : '',
-        team2Name: hasTeamNames ? (Math.random() > 0.5 ? 'Rival Team' : 'EXALTY Gaming') : '',
-        team1Bans: ['Yasuo', 'Jinx', 'Thresh', 'Lee Sin', 'Ahri'],
-        team2Bans: ['Zed', 'Caitlyn', 'Leona', 'Graves', 'Syndra'],
-        hasError: !hasTeamNames,
-        errorMessage: !hasTeamNames ? 'Noms d\'équipes manquants' : null
+        team1Name: apiResult.team1Name,
+        team2Name: apiResult.team2Name,
+        team1Bans: apiResult.team1Bans,
+        team2Bans: apiResult.team2Bans,
+        hasError: apiResult.hasError,
+        errorMessage: apiResult.errorMessage,
+        totalBans: apiResult.totalBans,
+        extractedAt: apiResult.extractedAt
       };
 
       // Ajouter aux drafts traitées
-      setProcessedDrafts(prev => [...prev, mockDraftData]);
+      setProcessedDrafts(prev => [...prev, draftData]);
 
       // Marquer comme traité
       setUrlProjects(prev => prev.map(project => {
@@ -278,9 +290,11 @@ const BansInterface = ({
         return project;
       }));
 
-      alert('URL traitée avec succès !');
+      alert(`✅ URL traitée avec succès !\n\nÉquipes détectées:\n• ${draftData.team1Name || 'Sans nom'}\n• ${draftData.team2Name || 'Sans nom'}\n\nBans extraits: ${draftData.totalBans}/10`);
+      
     } catch (error) {
-      console.error('Erreur traitement URL:', error);
+      console.error('❌ Erreur traitement URL:', error);
+      
       // Retirer le flag de traitement en cas d'erreur
       setUrlProjects(prev => prev.map(project => {
         if (project.id === urlItem.id) {
@@ -294,11 +308,27 @@ const BansInterface = ({
         }
         return project;
       }));
-      alert('Erreur lors du traitement de l\'URL');
+      
+      // Afficher l'erreur à l'utilisateur
+      alert(`❌ Erreur lors du traitement de l'URL:\n\n${error.message}\n\nVérifiez que:\n• L'API backend est démarrée\n• L'URL est valide\n• Votre connexion internet fonctionne`);
     }
   };
 
-  // Modifier les noms d'équipes
+  // Supprimer une draft
+  const deleteDraft = (draftId) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette draft ?')) return;
+    
+    setProcessedDrafts(prev => prev.filter(draft => draft.id !== draftId));
+    
+    // Si c'était la draft sélectionnée, revenir à la vue principale
+    if (selectedDraft?.id === draftId) {
+      setSelectedDraft(null);
+      setCurrentView('selector');
+    }
+    
+    // Notification
+    alert('✅ Draft supprimée avec succès !');
+  };
   const handleEditTeamNames = (draftId, newTeam1Name, newTeam2Name) => {
     setProcessedDrafts(prev => prev.map(draft => 
       draft.id === draftId 
@@ -571,7 +601,186 @@ const BansInterface = ({
     );
   };
 
-  // Composant de vue des bans
+  // Calculer les statistiques globales des bans
+  const getBanStatistics = (type) => {
+    const bans = type === 'our' ? getOurBans() : getEnemyBans();
+    const banCounts = {};
+    
+    // Compter chaque champion banni
+    bans.forEach(banGroup => {
+      banGroup.bans.forEach(champion => {
+        if (champion) {
+          banCounts[champion] = (banCounts[champion] || 0) + 1;
+        }
+      });
+    });
+    
+    // Convertir en array et trier par nombre de bans (décroissant)
+    return Object.entries(banCounts)
+      .map(([champion, count]) => ({ champion, count }))
+      .sort((a, b) => b.count - a.count);
+  };
+
+  // Composant de vue des statistiques globales
+  const BanStatisticsView = ({ type }) => {
+    const stats = getBanStatistics(type);
+    const title = type === 'our' ? 'Statistiques de nos bans' : 'Statistiques des bans ennemis';
+    const icon = type === 'our' ? <Shield className="w-6 h-6 text-blue-400" /> : <Swords className="w-6 h-6 text-red-400" />;
+    const colorClass = type === 'our' ? 'text-blue-400' : 'text-red-400';
+    const bgColorClass = type === 'our' ? 'bg-blue-600' : 'bg-red-600';
+    
+    const totalBans = stats.reduce((sum, stat) => sum + stat.count, 0);
+    const uniqueChampions = stats.length;
+    
+    return (
+      <div className="space-y-6">
+        {/* Header avec statistiques générales */}
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              {icon}
+              {title}
+            </h2>
+            <button
+              onClick={() => setCurrentView(type === 'our' ? 'our-bans' : 'enemy-bans')}
+              className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour aux drafts
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gray-700 rounded-lg">
+              <div className="text-3xl font-bold text-white">{totalBans}</div>
+              <div className="text-sm text-gray-400">Total bans</div>
+            </div>
+            <div className="text-center p-4 bg-gray-700 rounded-lg">
+              <div className={`text-3xl font-bold ${colorClass}`}>{uniqueChampions}</div>
+              <div className="text-sm text-gray-400">Champions différents</div>
+            </div>
+            <div className="text-center p-4 bg-gray-700 rounded-lg">
+              <div className="text-3xl font-bold text-purple-400">
+                {uniqueChampions > 0 ? (totalBans / uniqueChampions).toFixed(1) : 0}
+              </div>
+              <div className="text-sm text-gray-400">Moyenne par champion</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Liste des champions les plus bannis */}
+        {stats.length === 0 ? (
+          <div className="text-center text-gray-400 py-12 bg-gray-800 rounded-lg border border-gray-700">
+            <div className="text-6xl mb-4">📊</div>
+            <p className="text-xl mb-4">Aucune statistique</p>
+            <p>Traitez des drafts pour voir les statistiques apparaître</p>
+          </div>
+        ) : (
+          <div className="bg-gray-800 rounded-lg border border-gray-700">
+            <div className="p-6 border-b border-gray-700">
+              <h3 className="text-xl font-bold text-white">🏆 Champions les plus bannis</h3>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {stats.map((stat, index) => {
+                  // Calculer le pourcentage par rapport au champion le plus banni
+                  const maxBans = stats[0]?.count || 1;
+                  const percentage = (stat.count / maxBans) * 100;
+                  
+                  return (
+                    <div key={stat.champion} className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          {/* Position */}
+                          <div className={`w-8 h-8 ${
+                            index === 0 ? 'bg-yellow-500' :
+                            index === 1 ? 'bg-gray-400' :
+                            index === 2 ? 'bg-amber-600' :
+                            bgColorClass
+                          } rounded-full flex items-center justify-center text-white font-bold text-sm`}>
+                            {index + 1}
+                          </div>
+                          
+                          {/* Nom du champion avec image */}
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={getChampionImage(stat.champion)}
+                              alt={stat.champion}
+                              className="w-12 h-12 rounded-full border-2 border-gray-600"
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/48x48/374151/9CA3AF?text=' + stat.champion.charAt(0);
+                              }}
+                            />
+                            <div>
+                              <div className="font-bold text-white text-lg">{stat.champion}</div>
+                              <div className="text-sm text-gray-400">
+                                {((stat.count / totalBans) * 100).toFixed(1)}% du total
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Nombre de bans */}
+                        <div className="text-right">
+                          <div className={`text-2xl font-bold ${colorClass}`}>
+                            {stat.count}
+                          </div>
+                          <div className="text-sm text-gray-400">bans</div>
+                        </div>
+                      </div>
+                      
+                      {/* Barre de progression */}
+                      <div className="w-full bg-gray-600 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-500 ${
+                            type === 'our' ? 'bg-blue-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      
+                      {/* Médailles pour le top 3 */}
+                      {index < 3 && (
+                        <div className="mt-2 text-center">
+                          <span className="text-2xl">
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Top 5 résumé */}
+              {stats.length > 3 && (
+                <div className="mt-8 bg-gray-700 rounded-lg p-4">
+                  <h4 className="font-bold text-white mb-3">📋 Top 5 résumé</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
+                    {stats.slice(0, 5).map((stat, index) => (
+                      <div key={stat.champion} className="text-center">
+                        <img 
+                          src={getChampionImage(stat.champion)}
+                          alt={stat.champion}
+                          className="w-12 h-12 rounded-full border border-gray-600 mx-auto mb-2"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/48x48/374151/9CA3AF?text=' + stat.champion.charAt(0);
+                          }}
+                        />
+                        <div className="font-bold text-white">{index + 1}. {stat.champion}</div>
+                        <div className={`font-bold ${colorClass}`}>{stat.count} bans</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
   const BansView = ({ type }) => {
     const bans = type === 'our' ? getOurBans() : getEnemyBans();
     const title = type === 'our' ? 'Nos Bans' : 'Bans Ennemies';
@@ -597,6 +806,24 @@ const BansInterface = ({
           <div className="text-sm text-gray-400">
             {bans.length} ban(s) de {Object.keys(groupedBans).length} équipe(s)
           </div>
+        </div>
+
+        {/* Bouton statistiques globales */}
+        <div className="flex justify-center">
+          <button
+            onClick={() => setCurrentView(type === 'our' ? 'our-stats' : 'enemy-stats')}
+            className={`${type === 'our' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'} text-white p-4 rounded-lg transition-colors flex items-center gap-3`}
+          >
+            <div className="flex items-center gap-2">
+              <div className="text-2xl">📊</div>
+              <div>
+                <div className="font-bold">Statistiques globales</div>
+                <div className="text-sm opacity-80">
+                  Voir tous les {type === 'our' ? 'champions que nous avons bannis' : 'bans adverses'} (triés par fréquence)
+                </div>
+              </div>
+            </div>
+          </button>
         </div>
 
         {bans.length === 0 ? (
@@ -628,26 +855,43 @@ const BansInterface = ({
                         <div className="text-sm text-gray-400">
                           {new Date(ban.date).toLocaleDateString()}
                         </div>
-                        <button
-                          onClick={() => {
-                            const draft = processedDrafts.find(d => d.id === ban.draftId);
-                            setSelectedDraft(draft);
-                            setCurrentView('draft-detail');
-                          }}
-                          className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
-                        >
-                          <Eye className="w-3 h-3" />
-                          Voir draft
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              const draft = processedDrafts.find(d => d.id === ban.draftId);
+                              setSelectedDraft(draft);
+                              setCurrentView('draft-detail');
+                            }}
+                            className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" />
+                            Voir
+                          </button>
+                          <button
+                            onClick={() => deleteDraft(ban.draftId)}
+                            className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-900/20 transition-colors"
+                            title="Supprimer cette draft"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="space-y-2">
                         {ban.bans.map((champion, index) => (
-                          <div key={index} className="flex items-center gap-2 text-white">
+                          <div key={index} className="flex items-center gap-3 text-white">
                             <span className={`w-6 h-6 ${type === 'our' ? 'bg-blue-600' : 'bg-red-600'} rounded-full flex items-center justify-center text-xs font-bold`}>
                               {index + 1}
                             </span>
-                            {champion}
+                            <img 
+                              src={getChampionImage(champion)}
+                              alt={champion}
+                              className="w-8 h-8 rounded-full border border-gray-600"
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/32x32/374151/9CA3AF?text=' + champion.charAt(0);
+                              }}
+                            />
+                            <span className="font-medium">{champion}</span>
                           </div>
                         ))}
                       </div>
@@ -702,6 +946,14 @@ const BansInterface = ({
                   Corriger les noms
                 </button>
               )}
+              <button
+                onClick={() => deleteDraft(draft.id)}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                title="Supprimer cette draft"
+              >
+                <Trash2 className="w-4 h-4" />
+                Supprimer
+              </button>
             </div>
           </div>
 
@@ -815,7 +1067,15 @@ const BansInterface = ({
                   } rounded-full flex items-center justify-center text-sm font-bold`}>
                     {index + 1}
                   </span>
-                  <span className="text-lg">{champion}</span>
+                  <img 
+                    src={getChampionImage(champion)}
+                    alt={champion}
+                    className="w-10 h-10 rounded-full border-2 border-gray-600"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/40x40/374151/9CA3AF?text=' + champion.charAt(0);
+                    }}
+                  />
+                  <span className="text-lg font-medium">{champion}</span>
                 </div>
               ))}
             </div>
@@ -851,7 +1111,15 @@ const BansInterface = ({
                   } rounded-full flex items-center justify-center text-sm font-bold`}>
                     {index + 1}
                   </span>
-                  <span className="text-lg">{champion}</span>
+                  <img 
+                    src={getChampionImage(champion)}
+                    alt={champion}
+                    className="w-10 h-10 rounded-full border-2 border-gray-600"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/40x40/374151/9CA3AF?text=' + champion.charAt(0);
+                    }}
+                  />
+                  <span className="text-lg font-medium">{champion}</span>
                 </div>
               ))}
             </div>
@@ -1077,6 +1345,8 @@ const BansInterface = ({
               {currentView === 'selector' ? 'Gestion des Bans' : 
                currentView === 'our-bans' ? 'Nos Bans' : 
                currentView === 'enemy-bans' ? 'Bans Ennemies' :
+               currentView === 'our-stats' ? 'Statistiques - Nos Bans' :
+               currentView === 'enemy-stats' ? 'Statistiques - Bans Ennemis' :
                currentView === 'draft-detail' ? 'Détail de la Draft' : 'Gestion des Bans'}
             </h1>
           </div>
@@ -1088,6 +1358,8 @@ const BansInterface = ({
         {currentView === 'selector' && <SelectorView />}
         {currentView === 'our-bans' && <BansView type="our" />}
         {currentView === 'enemy-bans' && <BansView type="enemy" />}
+        {currentView === 'our-stats' && <BanStatisticsView type="our" />}
+        {currentView === 'enemy-stats' && <BanStatisticsView type="enemy" />}
         {currentView === 'draft-detail' && <DraftDetailView draft={selectedDraft} />}
       </div>
     </div>
