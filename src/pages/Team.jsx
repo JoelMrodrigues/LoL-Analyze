@@ -10,6 +10,8 @@ import EnhancedMatchHistory from '../components/team/EnhancedMatchHistory';
 import TeamPlayerStats from '../components/team/TeamPlayerStats';
 import CompleteDraftSystem from '../components/team/draft/CompleteDraftSystem';
 import ChampionPoolInterface from '../components/team/draft/ChampionPoolInterface';
+import TeamReportInterface from '../components/team/rapport/TeamReportInterface';
+import BansInterface from '../components/team/bans/BansInterface';
 
 // Composant de rendu du contenu selon la vue
 const TeamContent = ({ teamView, selectedTeam, setShowInvitePlayer, setShowImportMatch, removePlayer }) => {
@@ -53,8 +55,37 @@ const TeamContent = ({ teamView, selectedTeam, setShowInvitePlayer, setShowImpor
         />
       );
 
+    case 'rapport':
+      return (
+        <TeamReportInterface 
+          teamData={selectedTeam ? {
+            players: selectedTeam.players.map(player => ({
+              id: player.id,
+              name: player.username,
+              role: player.role
+            })),
+            matches: selectedTeam.matches || []
+          } : null}
+          onBack={() => {/* Navigation retour si nécessaire */}}
+        />
+      );
+
     case 'drafts':
       return <CompleteDraftSystem />;
+
+    case 'bans':
+      return (
+        <BansInterface 
+          teamData={selectedTeam ? {
+            players: selectedTeam.players.map(player => ({
+              id: player.id,
+              name: player.username,
+              role: player.role
+            }))
+          } : null}
+          onBack={() => {/* Navigation retour si nécessaire */}}
+        />
+      );
 
     default:
       return <div>Vue non trouvée</div>;
@@ -191,7 +222,9 @@ const Team = () => {
                 { id: 'match-history', label: 'Match History', icon: '🎮' },
                 { id: 'stats', label: 'Stats', icon: '📊' },
                 { id: 'pool-champ', label: 'Pool Champ', icon: '🏆' },
-                { id: 'drafts', label: 'Drafts', icon: '🎯' }
+                { id: 'rapport', label: 'Rapport', icon: '📋' },
+                { id: 'drafts', label: 'Drafts', icon: '🎯' },
+                { id: 'bans', label: 'Bans', icon: '🚫' }
               ].map(view => (
                 <button
                   key={view.id}
