@@ -9,8 +9,7 @@ import TeamMembersView from '../components/team/views/TeamMembersView';
 import EnhancedMatchHistory from '../components/team/EnhancedMatchHistory';
 import TeamPlayerStats from '../components/team/TeamPlayerStats';
 import CompleteDraftSystem from '../components/team/draft/CompleteDraftSystem';
-
-
+import ChampionPoolInterface from '../components/team/draft/ChampionPoolInterface';
 
 // Composant de rendu du contenu selon la vue
 const TeamContent = ({ teamView, selectedTeam, setShowInvitePlayer, setShowImportMatch, removePlayer }) => {
@@ -41,31 +40,21 @@ const TeamContent = ({ teamView, selectedTeam, setShowInvitePlayer, setShowImpor
 
     case 'pool-champ':
       return (
-        <div>
-          <h2 className="text-2xl font-bold mb-6 text-white">Pool de Champions</h2>
-          <div className="text-gray-400 text-center py-12">
-            <div className="text-6xl mb-4">🏆</div>
-            <p className="text-xl mb-4">Pool de champions de l'équipe</p>
-            <p>Gérez les champions maîtrisés par chaque membre</p>
-            <div className="mt-6 text-sm">
-              <p>Cette fonctionnalité analysera automatiquement les champions les plus joués</p>
-              <p>par chaque membre de votre équipe basée sur l'historique des parties.</p>
-            </div>
-          </div>
-        </div>
+        <ChampionPoolInterface 
+          teamData={selectedTeam ? {
+            players: selectedTeam.players.map(player => ({
+              id: player.id,
+              name: player.username,
+              role: player.role
+            }))
+          } : null}
+          onSave={(data) => console.log('Données sauvegardées:', data)}
+          onBack={() => {/* Navigation retour */}}
+        />
       );
 
     case 'drafts':
-  return <CompleteDraftSystem />;(
-        <div>
-          <h2 className="text-2xl font-bold mb-6 text-white">Drafts</h2>
-          <div className="text-gray-400 text-center py-12">
-            <div className="text-6xl mb-4">🎯</div>
-            <p className="text-xl mb-4">Historique des drafts</p>
-            <p>Analysez vos stratégies de draft et compositions d'équipe</p>
-          </div>
-        </div>
-      );
+      return <CompleteDraftSystem />;
 
     default:
       return <div>Vue non trouvée</div>;
@@ -149,7 +138,7 @@ const Team = () => {
       </div>
 
       <div className="flex" style={{ height: 'calc(100vh - 120px)' }}>
-        {/* Sidebar gauche avec hauteur fixe pour éviter les décalages */}
+        {/* Sidebar gauche */}
         <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
           <div className="p-6 flex-1 flex flex-col">
             {/* Sélection d'équipe */}
@@ -192,7 +181,7 @@ const Team = () => {
               </select>
             </div>
 
-            {/* Navigation avec espace flexible */}
+            {/* Navigation */}
             <nav className="space-y-2 flex-1 min-h-0">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
                 Navigation
@@ -222,7 +211,7 @@ const Team = () => {
               ))}
             </nav>
 
-            {/* Info équipe avec hauteur fixe pour éviter les décalages */}
+            {/* Info équipe */}
             <div className="mt-4 h-64">
               {selectedTeam ? (
                 <div className="p-4 bg-gray-700 rounded-lg h-full">
@@ -242,7 +231,7 @@ const Team = () => {
           </div>
         </div>
 
-        {/* Contenu principal optimisé pour utiliser toute la hauteur */}
+        {/* Contenu principal */}
         <div className="flex-1 flex flex-col">
           <div className="flex-1 p-6 overflow-y-auto">
             <TeamContent 
