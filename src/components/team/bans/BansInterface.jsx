@@ -14,7 +14,11 @@ import {
   MoreVertical,
   FileText,
   Shield,
-  Swords
+  Swords,
+  AlertTriangle,
+  Check,
+  ExternalLink,
+  Eye
 } from 'lucide-react';
 
 // Composant principal pour la gestion des Bans
@@ -22,17 +26,16 @@ const BansInterface = ({
   teamData,
   onBack = () => {} 
 }) => {
-  const [currentView, setCurrentView] = useState('selector'); // 'selector', 'our-bans', 'enemy-bans'
+  const [currentView, setCurrentView] = useState('selector'); // 'selector', 'our-bans', 'enemy-bans', 'draft-detail'
   const [urlProjects, setUrlProjects] = useState([]);
   const [expandedProjects, setExpandedProjects] = useState(new Set());
   const [editingItem, setEditingItem] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const [bansData, setBansData] = useState({
-    ourBans: [],
-    enemyBans: []
-  });
+  const [processedDrafts, setProcessedDrafts] = useState([]);
+  const [selectedDraft, setSelectedDraft] = useState(null);
+  const [editingTeamNames, setEditingTeamNames] = useState(null);
 
   // Charger les données depuis localStorage
   useEffect(() => {
@@ -49,12 +52,12 @@ const BansInterface = ({
       setUrlProjects([defaultProject]);
     }
 
-    const savedBansData = localStorage.getItem('lol_analyzer_bans_data');
-    if (savedBansData) {
+    const savedProcessedDrafts = localStorage.getItem('lol_analyzer_processed_drafts');
+    if (savedProcessedDrafts) {
       try {
-        setBansData(JSON.parse(savedBansData));
+        setProcessedDrafts(JSON.parse(savedProcessedDrafts));
       } catch (error) {
-        console.error('Erreur chargement données bans:', error);
+        console.error('Erreur chargement drafts traitées:', error);
       }
     }
   }, []);
@@ -67,8 +70,8 @@ const BansInterface = ({
   }, [urlProjects]);
 
   useEffect(() => {
-    localStorage.setItem('lol_analyzer_bans_data', JSON.stringify(bansData));
-  }, [bansData]);
+    localStorage.setItem('lol_analyzer_processed_drafts', JSON.stringify(processedDrafts));
+  }, [processedDrafts]);
 
   // Fonctions utilitaires
   const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -92,6 +95,13 @@ const BansInterface = ({
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
+
+  // Vérifier si une équipe est "Exalty" (avec variantes)
+  const isExaltyTeam = (teamName) => {
+    if (!teamName) return false;
+    const name = teamName.toLowerCase();
+    return name.includes('exalty') || name.includes('exal') || name === 'ex';
+  };
 
   // Actions sur les projets/URLs
   const handleCreateUrlProject = () => {
@@ -217,7 +227,6 @@ const BansInterface = ({
 
   // Traitement des URLs (simulation basée sur votre script)
   const processUrl = async (urlItem) => {
-    // Simulation du traitement - dans la réalité, vous appelleriez votre script
     try {
       // Marquer comme en cours de traitement
       setUrlProjects(prev => prev.map(project => {
@@ -236,23 +245,24 @@ const BansInterface = ({
       // Simulation de données de bans (remplacez par votre logique réelle)
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simulation délai
 
-      const mockBansData = {
-        team1Name: 'Équipe Bleue',
-        team2Name: 'Équipe Rouge',
-        team1: ['Yasuo', 'Jinx', 'Thresh', 'Lee Sin', 'Ahri'],
-        team2: ['Zed', 'Caitlyn', 'Leona', 'Graves', 'Syndra']
+      // Simuler parfois des noms d'équipes manquants
+      const hasTeamNames = Math.random() > 0.3; // 70% de chance d'avoir des noms
+      
+      const mockDraftData = {
+        id: generateId(),
+        url: urlItem.url,
+        urlId: urlItem.id,
+        processedAt: new Date().toISOString(),
+        team1Name: hasTeamNames ? (Math.random() > 0.5 ? 'Team EXALTY' : 'Enemy Squad') : '',
+        team2Name: hasTeamNames ? (Math.random() > 0.5 ? 'Rival Team' : 'EXALTY Gaming') : '',
+        team1Bans: ['Yasuo', 'Jinx', 'Thresh', 'Lee Sin', 'Ahri'],
+        team2Bans: ['Zed', 'Caitlyn', 'Leona', 'Graves', 'Syndra'],
+        hasError: !hasTeamNames,
+        errorMessage: !hasTeamNames ? 'Noms d\'équipes manquants' : null
       };
 
-      // Ajouter aux données de bans
-      setBansData(prev => ({
-        ...prev,
-        ourBans: [...prev.ourBans, {
-          id: generateId(),
-          url: urlItem.url,
-          date: new Date().toISOString(),
-          ...mockBansData
-        }]
-      }));
+      // Ajouter aux drafts traitées
+      setProcessedDrafts(prev => [...prev, mockDraftData]);
 
       // Marquer comme traité
       setUrlProjects(prev => prev.map(project => {
@@ -288,6 +298,78 @@ const BansInterface = ({
     }
   };
 
+  // Modifier les noms d'équipes
+  const handleEditTeamNames = (draftId, newTeam1Name, newTeam2Name) => {
+    setProcessedDrafts(prev => prev.map(draft => 
+      draft.id === draftId 
+        ? { 
+            ...draft, 
+            team1Name: newTeam1Name, 
+            team2Name: newTeam2Name,
+            hasError: !newTeam1Name || !newTeam2Name,
+            errorMessage: (!newTeam1Name || !newTeam2Name) ? 'Noms d\'équipes manquants' : null
+          }
+        : draft
+    ));
+    setEditingTeamNames(null);
+  };
+
+  // Obtenir les bans de notre équipe
+  const getOurBans = () => {
+    const ourBans = [];
+    processedDrafts.forEach(draft => {
+      if (isExaltyTeam(draft.team1Name)) {
+        ourBans.push({
+          draftId: draft.id,
+          teamName: draft.team1Name || 'Équipe sans nom',
+          bans: draft.team1Bans,
+          date: draft.processedAt,
+          url: draft.url,
+          hasError: draft.hasError
+        });
+      }
+      if (isExaltyTeam(draft.team2Name)) {
+        ourBans.push({
+          draftId: draft.id,
+          teamName: draft.team2Name || 'Équipe sans nom',
+          bans: draft.team2Bans,
+          date: draft.processedAt,
+          url: draft.url,
+          hasError: draft.hasError
+        });
+      }
+    });
+    return ourBans;
+  };
+
+  // Obtenir les bans ennemis
+  const getEnemyBans = () => {
+    const enemyBans = [];
+    processedDrafts.forEach(draft => {
+      if (!isExaltyTeam(draft.team1Name)) {
+        enemyBans.push({
+          draftId: draft.id,
+          teamName: draft.team1Name || 'Équipe sans nom',
+          bans: draft.team1Bans,
+          date: draft.processedAt,
+          url: draft.url,
+          hasError: draft.hasError
+        });
+      }
+      if (!isExaltyTeam(draft.team2Name)) {
+        enemyBans.push({
+          draftId: draft.id,
+          teamName: draft.team2Name || 'Équipe sans nom',
+          bans: draft.team2Bans,
+          date: draft.processedAt,
+          url: draft.url,
+          hasError: draft.hasError
+        });
+      }
+    });
+    return enemyBans;
+  };
+
   // Filtrage par recherche
   const filteredProjects = urlProjects.filter(project => {
     if (!searchQuery) return true;
@@ -311,6 +393,9 @@ const BansInterface = ({
     const isProject = item.type === 'url-project';
     const isExpanded = isProject && expandedProjects.has(item.id);
 
+    // Trouver la draft associée si c'est une URL
+    const associatedDraft = !isProject ? processedDrafts.find(draft => draft.urlId === item.id) : null;
+
     return (
       <div className="group">
         <div className={`flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors ${
@@ -330,7 +415,21 @@ const BansInterface = ({
                 )}
               </button>
             ) : (
-              <FileText className="w-5 h-5 text-green-400 ml-2" />
+              <div className="ml-2 flex items-center">
+                <FileText className="w-5 h-5 text-green-400" />
+                {associatedDraft && (
+                  <button
+                    onClick={() => {
+                      setSelectedDraft(associatedDraft);
+                      setCurrentView('draft-detail');
+                    }}
+                    className="ml-2 p-1 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                    title="Voir les détails de cette draft"
+                  >
+                    <Eye className="w-3 h-3 text-white" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
@@ -371,7 +470,12 @@ const BansInterface = ({
               </div>
             ) : (
               <div>
-                <div className="font-medium text-white">{item.name}</div>
+                <div className="font-medium text-white flex items-center gap-2">
+                  {item.name}
+                  {associatedDraft?.hasError && (
+                    <AlertTriangle className="w-4 h-4 text-yellow-400" title="Erreur dans cette draft" />
+                  )}
+                </div>
                 <div className="text-xs text-gray-400">
                   {isProject 
                     ? `${item.urls?.length || 0} URL(s)`
@@ -382,6 +486,9 @@ const BansInterface = ({
                           <span>Modifié le {new Date(item.updatedAt).toLocaleDateString()}</span>
                           {item.processed && <span className="text-green-400">✅ Traité</span>}
                           {item.processing && <span className="text-yellow-400">🔄 En cours...</span>}
+                          {associatedDraft?.hasError && (
+                            <span className="text-yellow-400">⚠️ {associatedDraft.errorMessage}</span>
+                          )}
                         </div>
                       </div>
                     )
@@ -466,9 +573,19 @@ const BansInterface = ({
 
   // Composant de vue des bans
   const BansView = ({ type }) => {
-    const bans = type === 'our' ? bansData.ourBans : bansData.enemyBans;
+    const bans = type === 'our' ? getOurBans() : getEnemyBans();
     const title = type === 'our' ? 'Nos Bans' : 'Bans Ennemies';
     const icon = type === 'our' ? <Shield className="w-6 h-6 text-blue-400" /> : <Swords className="w-6 h-6 text-red-400" />;
+
+    // Grouper par équipe
+    const groupedBans = bans.reduce((acc, ban) => {
+      const teamName = ban.teamName;
+      if (!acc[teamName]) {
+        acc[teamName] = [];
+      }
+      acc[teamName].push(ban);
+      return acc;
+    }, {});
 
     return (
       <div className="space-y-4">
@@ -478,7 +595,7 @@ const BansInterface = ({
             {title}
           </h2>
           <div className="text-sm text-gray-400">
-            {bans.length} draft(s) analysée(s)
+            {bans.length} ban(s) de {Object.keys(groupedBans).length} équipe(s)
           </div>
         </div>
 
@@ -489,54 +606,286 @@ const BansInterface = ({
             <p>Traitez des URLs pour voir les bans apparaître ici</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {bans.map(ban => (
-              <div key={ban.id} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <div className="space-y-6">
+            {Object.entries(groupedBans).map(([teamName, teamBans]) => (
+              <div key={teamName} className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Draft du {new Date(ban.date).toLocaleDateString()}</h3>
-                  <a 
-                    href={ban.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 text-sm"
-                  >
-                    Voir la draft →
-                  </a>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    {teamName}
+                    {teamBans.some(ban => ban.hasError) && (
+                      <AlertTriangle className="w-5 h-5 text-yellow-400" title="Équipe avec erreurs" />
+                    )}
+                  </h3>
+                  <div className="text-sm text-gray-400">
+                    {teamBans.length} draft(s)
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-semibold text-blue-400 mb-3">{ban.team1Name}</h4>
-                    <div className="space-y-2">
-                      {ban.team1.map((champion, index) => (
-                        <div key={index} className="flex items-center gap-2 text-white">
-                          <span className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
-                            {index + 1}
-                          </span>
-                          {champion}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {teamBans.map(ban => (
+                    <div key={`${ban.draftId}-${ban.date}`} className="bg-gray-700 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm text-gray-400">
+                          {new Date(ban.date).toLocaleDateString()}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-red-400 mb-3">{ban.team2Name}</h4>
-                    <div className="space-y-2">
-                      {ban.team2.map((champion, index) => (
-                        <div key={index} className="flex items-center gap-2 text-white">
-                          <span className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-xs font-bold">
-                            {index + 1}
-                          </span>
-                          {champion}
+                        <button
+                          onClick={() => {
+                            const draft = processedDrafts.find(d => d.id === ban.draftId);
+                            setSelectedDraft(draft);
+                            setCurrentView('draft-detail');
+                          }}
+                          className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                          Voir draft
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {ban.bans.map((champion, index) => (
+                          <div key={index} className="flex items-center gap-2 text-white">
+                            <span className={`w-6 h-6 ${type === 'our' ? 'bg-blue-600' : 'bg-red-600'} rounded-full flex items-center justify-center text-xs font-bold`}>
+                              {index + 1}
+                            </span>
+                            {champion}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {ban.hasError && (
+                        <div className="mt-3 p-2 bg-yellow-600 bg-opacity-20 rounded text-yellow-400 text-xs">
+                          ⚠️ {processedDrafts.find(d => d.id === ban.draftId)?.errorMessage}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
+    );
+  };
+
+  // Vue détaillée d'une draft
+  const DraftDetailView = ({ draft }) => {
+    if (!draft) return null;
+
+    const isTeam1Exalty = isExaltyTeam(draft.team1Name);
+    const isTeam2Exalty = isExaltyTeam(draft.team2Name);
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">
+              Draft du {new Date(draft.processedAt).toLocaleDateString()}
+            </h2>
+            <div className="flex items-center gap-3">
+              <a 
+                href={draft.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Voir sur drafter.lol
+              </a>
+              {draft.hasError && (
+                <button
+                  onClick={() => setEditingTeamNames(draft.id)}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Corriger les noms
+                </button>
+              )}
+            </div>
+          </div>
+
+          {draft.hasError && (
+            <div className="mb-4 p-4 bg-yellow-600 bg-opacity-20 border border-yellow-500 rounded-lg">
+              <div className="flex items-center gap-2 text-yellow-400">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-semibold">{draft.errorMessage}</span>
+              </div>
+              <p className="text-yellow-300 text-sm mt-1">
+                Cliquez sur "Corriger les noms" pour spécifier qui est qui.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Modal d'édition des noms d'équipes */}
+        {editingTeamNames === draft.id && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-bold text-white mb-4">Corriger les noms d'équipes</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Équipe 1 (Bans: {draft.team1Bans.join(', ')})
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue={draft.team1Name}
+                    id="team1-name"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                    placeholder="Nom de l'équipe 1"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Équipe 2 (Bans: {draft.team2Bans.join(', ')})
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue={draft.team2Name}
+                    id="team2-name"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                    placeholder="Nom de l'équipe 2"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setEditingTeamNames(null)}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => {
+                    const team1Name = document.getElementById('team1-name').value;
+                    const team2Name = document.getElementById('team2-name').value;
+                    handleEditTeamNames(draft.id, team1Name, team2Name);
+                    // Mettre à jour la draft sélectionnée
+                    setSelectedDraft(prev => ({
+                      ...prev,
+                      team1Name,
+                      team2Name,
+                      hasError: !team1Name || !team2Name,
+                      errorMessage: (!team1Name || !team2Name) ? 'Noms d\'équipes manquants' : null
+                    }));
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Sauvegarder
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Affichage des bans */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Équipe 1 */}
+          <div className={`bg-gray-800 rounded-lg p-6 border-2 ${
+            isTeam1Exalty ? 'border-blue-500' : 'border-red-500'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-xl font-bold ${isTeam1Exalty ? 'text-blue-400' : 'text-red-400'}`}>
+                {draft.team1Name || 'Équipe 1 (sans nom)'}
+              </h3>
+              <div className="flex items-center gap-2">
+                {isTeam1Exalty && (
+                  <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
+                    NOS BANS
+                  </div>
+                )}
+                {!isTeam1Exalty && (
+                  <div className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
+                    BANS ENNEMIS
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {draft.team1Bans.map((champion, index) => (
+                <div key={index} className="flex items-center gap-3 text-white">
+                  <span className={`w-8 h-8 ${
+                    isTeam1Exalty ? 'bg-blue-600' : 'bg-red-600'
+                  } rounded-full flex items-center justify-center text-sm font-bold`}>
+                    {index + 1}
+                  </span>
+                  <span className="text-lg">{champion}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Équipe 2 */}
+          <div className={`bg-gray-800 rounded-lg p-6 border-2 ${
+            isTeam2Exalty ? 'border-blue-500' : 'border-red-500'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-xl font-bold ${isTeam2Exalty ? 'text-blue-400' : 'text-red-400'}`}>
+                {draft.team2Name || 'Équipe 2 (sans nom)'}
+              </h3>
+              <div className="flex items-center gap-2">
+                {isTeam2Exalty && (
+                  <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
+                    NOS BANS
+                  </div>
+                )}
+                {!isTeam2Exalty && (
+                  <div className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
+                    BANS ENNEMIS
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {draft.team2Bans.map((champion, index) => (
+                <div key={index} className="flex items-center gap-3 text-white">
+                  <span className={`w-8 h-8 ${
+                    isTeam2Exalty ? 'bg-blue-600' : 'bg-red-600'
+                  } rounded-full flex items-center justify-center text-sm font-bold`}>
+                    {index + 1}
+                  </span>
+                  <span className="text-lg">{champion}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Résumé */}
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <h3 className="text-lg font-bold text-white mb-4">📊 Résumé de cette draft</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="bg-blue-600 bg-opacity-20 rounded-lg p-3">
+              <div className="text-2xl font-bold text-blue-400">
+                {(isTeam1Exalty ? draft.team1Bans : []).concat(isTeam2Exalty ? draft.team2Bans : []).length}
+              </div>
+              <div className="text-sm text-blue-300">Nos bans</div>
+            </div>
+            <div className="bg-red-600 bg-opacity-20 rounded-lg p-3">
+              <div className="text-2xl font-bold text-red-400">
+                {(!isTeam1Exalty ? draft.team1Bans : []).concat(!isTeam2Exalty ? draft.team2Bans : []).length}
+              </div>
+              <div className="text-sm text-red-300">Bans ennemis</div>
+            </div>
+            <div className="bg-gray-600 bg-opacity-20 rounded-lg p-3">
+              <div className="text-2xl font-bold text-white">10</div>
+              <div className="text-sm text-gray-300">Total bans</div>
+            </div>
+            <div className="bg-purple-600 bg-opacity-20 rounded-lg p-3">
+              <div className="text-2xl font-bold text-purple-400">
+                {new Date(draft.processedAt).toLocaleDateString()}
+              </div>
+              <div className="text-sm text-purple-300">Date</div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -627,6 +976,7 @@ const BansInterface = ({
                 acc + (p.type === 'url' ? 1 : (p.urls?.length || 0)), 0
               )} URL(s)
             </span>
+            <span>{processedDrafts.length} draft(s) traitée(s)</span>
           </div>
         </div>
       </div>
@@ -643,7 +993,7 @@ const BansInterface = ({
             >
               <Shield className="w-8 h-8 mx-auto mb-2" />
               <div className="font-bold">Nos Bans</div>
-              <div className="text-sm opacity-80">{bansData.ourBans.length} draft(s)</div>
+              <div className="text-sm opacity-80">{getOurBans().length} ban(s)</div>
             </button>
             
             <button
@@ -652,8 +1002,40 @@ const BansInterface = ({
             >
               <Swords className="w-8 h-8 mx-auto mb-2" />
               <div className="font-bold">Bans Ennemies</div>
-              <div className="text-sm opacity-80">{bansData.enemyBans.length} draft(s)</div>
+              <div className="text-sm opacity-80">{getEnemyBans().length} ban(s)</div>
             </button>
+          </div>
+
+          {/* Dernières drafts traitées */}
+          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <h4 className="font-semibold text-white mb-3">📋 Dernières drafts traitées</h4>
+            {processedDrafts.length === 0 ? (
+              <p className="text-gray-400 text-sm">Aucune draft traitée</p>
+            ) : (
+              <div className="space-y-2">
+                {processedDrafts.slice(-5).reverse().map(draft => (
+                  <div 
+                    key={draft.id}
+                    className="flex items-center justify-between p-2 bg-gray-700 rounded cursor-pointer hover:bg-gray-600 transition-colors"
+                    onClick={() => {
+                      setSelectedDraft(draft);
+                      setCurrentView('draft-detail');
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-green-400" />
+                      <span className="text-white text-sm">
+                        {new Date(draft.processedAt).toLocaleDateString()}
+                      </span>
+                      {draft.hasError && (
+                        <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                      )}
+                    </div>
+                    <Eye className="w-4 h-4 text-gray-400" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Instructions */}
@@ -662,8 +1044,10 @@ const BansInterface = ({
             <ul className="text-sm text-gray-300 space-y-1">
               <li>• Ajoutez vos URLs de draft drafter.lol</li>
               <li>• Organisez-les dans des projets</li>
-              <li>• Cliquez sur le bouton violet pour traiter une URL</li>
-              <li>• Les bans apparaîtront automatiquement dans les sections correspondantes</li>
+              <li>• Cliquez sur le bouton violet 🟣 pour traiter une URL</li>
+              <li>• Les équipes avec "Exalty" → Nos bans</li>
+              <li>• Les autres équipes → Bans ennemies</li>
+              <li>• Cliquez sur l'œil 👁️ pour voir une draft en détail</li>
             </ul>
           </div>
         </div>
@@ -679,7 +1063,10 @@ const BansInterface = ({
           <div className="flex items-center gap-4">
             {currentView !== 'selector' && (
               <button
-                onClick={() => setCurrentView('selector')}
+                onClick={() => {
+                  setCurrentView('selector');
+                  setSelectedDraft(null);
+                }}
                 className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -688,7 +1075,9 @@ const BansInterface = ({
             )}
             <h1 className="text-2xl font-bold text-white">
               {currentView === 'selector' ? 'Gestion des Bans' : 
-               currentView === 'our-bans' ? 'Nos Bans' : 'Bans Ennemies'}
+               currentView === 'our-bans' ? 'Nos Bans' : 
+               currentView === 'enemy-bans' ? 'Bans Ennemies' :
+               currentView === 'draft-detail' ? 'Détail de la Draft' : 'Gestion des Bans'}
             </h1>
           </div>
         </div>
@@ -699,6 +1088,7 @@ const BansInterface = ({
         {currentView === 'selector' && <SelectorView />}
         {currentView === 'our-bans' && <BansView type="our" />}
         {currentView === 'enemy-bans' && <BansView type="enemy" />}
+        {currentView === 'draft-detail' && <DraftDetailView draft={selectedDraft} />}
       </div>
     </div>
   );
